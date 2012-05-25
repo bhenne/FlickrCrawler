@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/mosp/!svn/ver/437/branches/04_WWW2012/crawlers/python-flickr-api
+END
+gen_epydoc.sh
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/mosp/!svn/ver/428/branches/04_WWW2012/crawlers/python-flickr-api/gen_epydoc.sh
+END
+epydoc.conf
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/mosp/!svn/ver/428/branches/04_WWW2012/crawlers/python-flickr-api/epydoc.conf
+END
+setup.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/mosp/!svn/ver/428/branches/04_WWW2012/crawlers/python-flickr-api/setup.py
+END
