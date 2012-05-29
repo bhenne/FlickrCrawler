@@ -13,15 +13,46 @@ import urllib
 import hashlib
 import json
 
-from base import FlickrError,FlickrAPIError
+from flickrerrors import FlickrError,FlickrAPIError
+from cache import SimpleCache
 
-from flickr_keys import API_KEY, API_SECRET
+API_KEY = None
+API_SECRET = None
 
-APICOUNTER = 0
+try :
+    import flickr_keys 
+    API_KEY = flickr_keys.API_KEY
+    API_SECRET = flickr_keys.API_SECRET
+except ImportError :
+    pass
+
+def set_keys(api_key,api_secret):
+    global API_KEY,API_SECRET
+    API_KEY = api_key
+    API_SECRET = api_secret
 
 REST_URL = "http://api.flickr.com/services/rest/"
 
-def call_api(api_key = API_KEY, api_secret = API_SECRET, auth_handler = None, needssigning = False,request_url = REST_URL, raw = False,**args):
+CACHE = None
+
+def enable_cache(cache_object = None):
+    global CACHE
+    CACHE = cache_object or SimpleCache()
+
+
+def disable_cache():
+    global CACHE
+    CACHE = None
+
+def send_request(url,data):
+    req = urllib2.Request(url,data)
+    try :
+        return urllib2.urlopen(req).read()
+    except urllib2.HTTPError , e:
+        raise FlickrError( e.read().split('&')[0] )
+    
+
+def call_api(api_key = None, api_secret = None, auth_handler = None, needssigning = False,request_url = REST_URL, raw = False,**args):
     """
         Performs the calls to the Flickr REST interface.
         
@@ -34,8 +65,15 @@ def call_api(api_key = API_KEY, api_secret = API_SECRET, auth_handler = None, ne
                   a dictionnary built from the JSON answer is returned.
             args : the arguments to pass to the method.
     """
-    global APICOUNTER
-    APICOUNTER += 1 
+    
+    if not api_key :
+        api_key = API_KEY
+    if not api_secret :
+        api_secret = API_SECRET
+    
+    if not api_key or not api_secret :
+        raise FlickrError("The Flickr API keys have not been set")
+
     clean_args(args)
     args["api_key"] = api_key
     if not raw :
@@ -54,14 +92,13 @@ def call_api(api_key = API_KEY, api_secret = API_SECRET, auth_handler = None, ne
         
     else :
          data = auth_handler.complete_parameters(url = request_url,params = args).to_postdata()
-
-    req = urllib2.Request(request_url,data)
     
-        
-    try :
-        resp = urllib2.urlopen(req).read()
-    except urllib2.HTTPError , e:
-        raise FlickrError( e.read().split('&')[0] )
+    
+    if CACHE is None :
+        resp = send_request(request_url,data)
+    else :
+        resp = CACHE.get(data) or send_request(request_url,data)
+        if data not in CACHE : CACHE.set(data,resp)
 
     if raw :
         return resp
@@ -79,7 +116,7 @@ def call_api(api_key = API_KEY, api_secret = API_SECRET, auth_handler = None, ne
 
     return resp
 
-def clean_content(d):
+def clean_content(d,lists = {}):
     """
         Cleans out recursively the keys comming from the JSON
         dictionnary.

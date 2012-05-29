@@ -23,16 +23,17 @@
 
 from objects import *
 import objects
-import api
-from auth import AuthHandler
+from auth import set_auth_handler
+
 import upload as Upload
 from upload import upload,replace
+from method_call import set_keys,enable_cache,disable_cache
 
-def set_auth_handler(auth_handler):
-    if isinstance(auth_handler,str):
-        ah = AuthHandler.load(auth_handler)
-        set_auth_handler(ah)
-    else :
-        objects.AUTH_HANDLER = auth_handler
-        Upload.AUTH_HANDLER = auth_handler
-        api.AUTH_HANDLER = auth_handler
+#~ def set_auth_handler(auth_handler):
+    #~ if isinstance(auth_handler,str):
+        #~ ah = AuthHandler.load(auth_handler)
+        #~ set_auth_handler(ah)
+    #~ else :
+        #~ objects.AUTH_HANDLER = auth_handler
+        #~ Upload.AUTH_HANDLER = auth_handler
+        #~ api.AUTH_HANDLER = auth_handler

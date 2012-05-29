@@ -36,11 +36,13 @@ from oauth import oauth
 import time
 import urlparse
 import urllib2
-from flickr_keys import API_KEY, API_SECRET
+from method_call import API_KEY, API_SECRET
 
 TOKEN_REQUEST_URL = "http://www.flickr.com/services/oauth/request_token"
 AUTHORIZE_URL = "http://www.flickr.com/services/oauth/authorize"
 ACCESS_TOKEN_URL = "http://www.flickr.com/services/oauth/access_token"
+
+AUTH_HANDLER = None
 
 class AuthHandlerError(Exception):
     pass
@@ -129,13 +131,32 @@ class AuthHandler(object):
         self.write(filename)
             
     @staticmethod
-    def load(filename):
+    def load(filename = None):
         with open(filename,"r") as f :
-            key,secret,access_key,access_secret = f.read().split("\n")
+            try :
+                key,secret,access_key,access_secret = f.read().split("\n")
+            except :
+                access_key,access_secret = f.read().split("\n")
+                key = API_KEY
+                secret = API_SECRET
         return AuthHandler(key,secret,access_token_key = access_key,access_token_secret = access_secret)
+    
+    @staticmethod
+    def create(token_key,token_secret):
+        return AuthHandler(access_token_key = access_key,access_token_secret = access_secret)
 
-        
-        
-        
-    
-    
+def token_factory(filename = None, token_key = None, token_secret = None):
+    if filename is None :
+        if (token_key is None) or (token_secret is None):
+            raise ValueError("token_secret and token_key cannot be None")
+        return AuthHandler.create(token_key,token_secret)
+    else :
+        return AuthHandler.load(filename)
+
+def set_auth_handler(auth_handler):
+    global AUTH_HANDLER
+    if isinstance(auth_handler,str):
+        ah = AuthHandler.load(auth_handler)
+        set_auth_handler(ah)
+    else :
+        AUTH_HANDLER = auth_handler

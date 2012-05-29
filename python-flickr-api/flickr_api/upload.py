@@ -16,18 +16,16 @@
 
 
 import method_call
-from base import FlickrError, FlickrAPIError
+from method_call import API_KEY
+from flickrerrors import FlickrError, FlickrAPIError
 from objects import Photo,UploadTicket
 import auth
 import multipart
-from flickr_keys import API_KEY
 import os
 from xml.etree import ElementTree as ET
 
 UPLOAD_URL = "http://api.flickr.com/services/upload/"
 REPLACE_URL = "http://api.flickr.com/services/replace/"
-
-AUTH_HANDLER = None
 
 def format_dict(d):
     d_ = {}
@@ -93,7 +91,7 @@ def upload(**args):
     
     photo_file = args.pop("photo_file")
 
-    r = post(UPLOAD_URL,AUTH_HANDLER,args,photo_file)
+    r = post(UPLOAD_URL,auth.AUTH_HANDLER,args,photo_file)
 
     t = r[0]
     if t.tag == 'photoid' :
