@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """This script crawls Flickr path_aliases/NSIDs from web pages without any API usage.
 
 The script loads and parses different flickr web pages, which include /photos/FOO-URLs
@@ -6,7 +7,7 @@ Names may not be uniq. Used sort/uniq at bash to filter.
 Names are finally stored in FlickrUsernames.uniq.txt and FlickrUsernamesMobile.uniq.txt
 """
 
-import re, urllib, random, sys
+import re, urllib, random, os, sys, time
 
 user_agents = [
     'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
@@ -35,23 +36,68 @@ flickr_pages_with_usernames_multiple = [
     'http://www.flickr.com/galleries/',
     'http://www.flickr.com/photos/'
 ]
+#fpwumm_cats = ['', 'recent', 'portrait', 'macro', 'night','landscape']
+fpwumm_cats = ['recent']
+fpwumm_ids = [ '72157623237412006', #Evo 4G
+               '72157623257214966', #Droid Incredible
+               '72157629104662492', #One X
+               '72157624762157476', #Desire HD
+               '72157623390292511', #Desire 
+               '72157624172742253', #iPhone 4
+               '72157627469395877', #iPhone 4s
+               '72157620775652629', #iPhone 3GS
+               '72157607254796933', #iPhone 3G
+               '72157626485419110', #Galaxy S2
+               '72157623985657132', #Galaxy S
+               '72157627776523729', #Galaxy Nexus
+               '72157625948639270', #Galaxy Ace
+               '72157626728398240',
+               '72157616953691070',
+               '72157623910717049',
+               '72157621576215677',
+               '72157603345296678',
+               '56150',
+               '53774',
+               '50645',
+               '72157603328945228',
+               '72157600292926652',
+               '72157600767692957',
+               '3255',
+               '72157600291966813',
+               '1022',
+               '72157605294024642',
+               '72157601810364683',
+               '72157604583315619',
+               '72157602768624982',
+               '72157600767694317',
+               '72157627540171397',
+               '72157624455893065',
+               '72157625729544791',
+               '72157626931643196',
+               '72157625348586031',
+               '72157625577590052',
+               '261',
+               '72157623462273606',
+               '157',
+               '72157624225311271',
+               '1869',
+               '650',
+               '5649',
+               '1709',
+               '72157623227400843',
+               '72157624013405932',
+               '53218',
+               '72157604507279486' ]
+
 flickr_pages_with_usernames_multiple_mobile = [
     'http://www.flickr.com/cameras/apple/iphone_4s/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157627469395877&category=recent&cb=1319640914864',
     'http://www.flickr.com/cameras/apple/iphone_4/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157624172742253&category=recent&cb=1319640085765',
     'http://www.flickr.com/cameras/apple/iphone_3gs/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157620775652629&category=recent&cb=1319640980401',
     'http://www.flickr.com/cameras/apple/iphone_3g/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157607254796933&category=recent&cb=1319641023936',
     'http://www.flickr.com/cameras/htc/evo4g/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157623237412006&category=recent&cb=1319641077628',
     'http://www.flickr.com/cameras/htc/droid_incredible/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157623257214966&category=recent&cb=1319641117884',
     'http://www.flickr.com/cameras/htc/desire_hd/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157624762157476&category=recent&cb=1319641150556',
     'http://www.flickr.com/cameras/htc/desire/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157623390292511&category=recent&cb=1319641182020',
     'http://www.flickr.com/cameras/htc/adr6400l/',
     'http://www.flickr.com/cameras/blackberry/9700/',
     'http://www.flickr.com/cameras/blackberry/8520/',
@@ -74,14 +120,14 @@ flickr_pages_with_usernames_multiple_mobile = [
     'http://www.flickr.com/cameras/sonyericsson/seu5i/',
     'http://www.flickr.com/cameras/sonyericsson/c905/',
     'http://www.flickr.com/cameras/samsung/gt-i9000/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157623985657132&category=recent&cb=1319641226931',
     'http://www.flickr.com/cameras/samsung/samsung_gt-i9100/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157626485419110&category=recent&cb=1319641261611',
     'http://www.flickr.com/cameras/samsung/samsung_nexus_s/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157626728398240&category=recent&cb=1319641302349',
     'http://www.flickr.com/cameras/samsung/sgh-t959v/',
-    'http://www.flickr.com/cameras_model_fragment.gne?src=js&id=72157625743838619&category=recent&cb=1319641335831'
 ]
+
+for cid in fpwumm_ids:
+    for pcat in fpwumm_cats:
+        flickr_pages_with_usernames_multiple_mobile.append('http://www.flickr.com/cameras_model_fragment.gne?src=js&id=%s&category=%s' % (cid, pcat))
 
 
 def dates(year=2011):
@@ -106,7 +152,7 @@ for d in dates(year=year):
     flickr_pages_with_usernames_once.append('http://www.flickr.com/explore/interesting/%s/%s' % (d, suffix))
 
 
-def get_names(url):
+def get_names(url, out=sys.stdout):
     sys.stderr.write('getting %s\n' % url)
     myopener = MyURLOpener()
     page = myopener.open(url)
@@ -119,7 +165,7 @@ def get_names(url):
         if maybe not in blacklist and maybe[0] not in [ '"', "'"]:
             theset.add(maybe)
     for e in theset:
-        print e
+        out.write('%s\n' % e)
         
 ### 1) any users ###
 #for url in flickr_pages_with_usernames_once:
@@ -129,6 +175,12 @@ def get_names(url):
 #    get_names(random.choice(flickr_pages_with_usernames_multiple))
 
 ### 2) Mobile users ###
-for i in xrange(0, 11):
+outfile=open('MobileUsers.txt', 'at')
+for i in xrange(0, 50):
     for url in flickr_pages_with_usernames_multiple_mobile:
-        get_names(url)
+        get_names(url, out=outfile)
+        time.sleep(random.randint(1,6))
+    outfile.flush()
+    os.fsync(outfile.fileno())
+    time.sleep(random.randint(600,3600))
+    
