@@ -51,7 +51,7 @@ def send_request(url,data):
     except urllib2.HTTPError , e:
         raise FlickrError( e.read().split('&')[0] )
     
-
+call_counter = 0
 def call_api(api_key = None, api_secret = None, auth_handler = None, needssigning = False,request_url = REST_URL, raw = False,**args):
     """
         Performs the calls to the Flickr REST interface.
@@ -74,6 +74,8 @@ def call_api(api_key = None, api_secret = None, auth_handler = None, needssignin
     if not api_key or not api_secret :
         raise FlickrError("The Flickr API keys have not been set")
 
+    global call_counter
+    call_counter += 1
     clean_args(args)
     args["api_key"] = api_key
     if not raw :

@@ -823,7 +823,7 @@ class Photo(FlickrObject):
                 return [Photo.Exif(**e) for e in r["photo"]["exif"]]
             except KeyError :
                 return []
-        return args,format_result
+        return args,result_format
 
     @caller("flickr.favorites.getContext")
     def getFavoriteContext(self,**args):
