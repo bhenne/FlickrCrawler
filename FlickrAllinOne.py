@@ -14,8 +14,12 @@ import flickr_api       #APICALL (once)
 import json
 
 
-dbconn = sqlite3.connect('MobilePhotos.db')
+dbfile = '/home/henne/crawled_data/Flickr/FlickrPhotos.db'
 photo_file_path = '/home/henne/crawled_data/Flickr'
+
+# slow down crawler to respect limit of 1 api call per second
+sleeptime = 0.5
+
 
 ########## INPUT DATA ##########
 ###### Webpages to crawl #######
@@ -63,12 +67,16 @@ flickr_pages_with_usernames_multiple_mobile = [
     'http://www.flickr.com/cameras/samsung/sgh-t959v/',
 ]
 #fpwumm_cats = ['', 'recent', 'portrait', 'macro', 'night','landscape']
+#fpwumm_cats = ['recent', '']
 fpwumm_cats = ['recent']
 fpwumm_ids = [ '72157623237412006', #Evo 4G
                '72157623257214966', #Droid Incredible
+               '72157625301186015', #Droid Incredible 2
+               '72157607417678583', #Droid Dream
                '72157629104662492', #One X
                '72157624762157476', #Desire HD
                '72157623390292511', #Desire 
+               '72157624580560158', #Evo Shift 4G
                '72157624172742253', #iPhone 4
                '72157627469395877', #iPhone 4s
                '72157620775652629', #iPhone 3GS
@@ -77,6 +85,10 @@ fpwumm_ids = [ '72157623237412006', #Evo 4G
                '72157623985657132', #Galaxy S
                '72157627776523729', #Galaxy Nexus
                '72157625948639270', #Galaxy Ace
+               '72157625743838619', #Galaxy S 4G
+               '72157624297372018', #Galaxy Epic 4G
+               '72157629348324157', #Lumia 900
+               '72157627740135087', #Lumia 800
                '72157626728398240',
                '72157616953691070',
                '72157623910717049',
@@ -85,6 +97,8 @@ fpwumm_ids = [ '72157623237412006', #Evo 4G
                '56150',
                '53774',
                '50645',
+               '55698',             #HTC Hero
+               '72157617917812625', #HTC Hero 200
                '72157603328945228',
                '72157600292926652',
                '72157600767692957',
@@ -96,12 +110,12 @@ fpwumm_ids = [ '72157623237412006', #Evo 4G
                '72157604583315619',
                '72157602768624982',
                '72157600767694317',
-               '72157627540171397',
-               '72157624455893065',
+               '72157627540171397', #Droid Razr
+               '72157624455893065', #Droid X
                '72157625729544791',
                '72157626931643196',
                '72157625348586031',
-               '72157625577590052',
+               '72157625577590052', #Xperia Arc
                '261',
                '72157623462273606',
                '157',
@@ -111,19 +125,19 @@ fpwumm_ids = [ '72157623237412006', #Evo 4G
                '5649',
                '1709',
                '72157623227400843',
-               '72157624013405932',
+               '72157624013405932', #Nokia N8
                '53218',
                '72157604507279486' ]
 for cid in fpwumm_ids:
     for pcat in fpwumm_cats:
         flickr_pages_with_usernames_multiple_mobile.append('http://www.flickr.com/cameras_model_fragment.gne?src=js&id=%s&category=%s' % (cid, pcat))
 
-def dates(year=2011):
+def dates(year=2011, months=[1,12]):
     thedates = []
     def gen(m, days):
         for d in xrange(1, days+1):
             thedates.append('%02d/%02d/%02d' % (year, m, d))
-    for month in xrange(1, 13):
+    for month in xrange(months[0], months[1]+1):
         if month == 2:
             gen(month, 28)
         elif month in (1, 3, 5, 7, 8, 10, 12):
@@ -133,18 +147,29 @@ def dates(year=2011):
     return thedates
 
 flickr_pages_with_usernames_once = []
-page_range=[0,20]
-years=[2011, 2012]
+page_range=[1,10]
+years=[2011]
 for year in years:
     for d in dates(year=year):
         for page in xrange(page_range[0],page_range[1]+1):
             flickr_pages_with_usernames_once.append('http://www.flickr.com/explore/interesting/%s/page%s' % (d, page))
+for d in dates(year=2012, months=[1,5]):
+    for page in xrange(page_range[0],page_range[1]+1):
+        flickr_pages_with_usernames_once.append('http://www.flickr.com/explore/interesting/%s/page%s' % (d, page))
+for d in dates(year=2010, months=[12,12]):
+    for page in xrange(page_range[0],page_range[1]+1):
+        flickr_pages_with_usernames_once.append('http://www.flickr.com/explore/interesting/%s/page%s' % (d, page))
 
 ################################
 
 
 def debug(str):
-    print str
+    sys.stdout.write('%s\n' % str)
+    sys.stdout.flush()
+
+def error(str):
+    sys.stderr.write('%s\n' % str)
+    sys.stderr.flush()
     
 
 ### 1. PERSONALIZED URLS
@@ -184,8 +209,22 @@ user_agents = [
 ]
 
 class MyURLOpener(urllib.FancyURLopener, object):
+    """URLopener with random user agent."""
     version = random.choice(user_agents)
 
+work_on_all = []
+def personalized_urls_from_web_all(dbconn, url_list, mobile=False, wait_interval=[1,3]):
+    """Crawl personalized urls from web pages and store them in table personalized_urls AND Get all from list instead of random_choices."""
+
+    global work_on_all
+    #if len(work_on_all) == 0:
+    #    debug('START AGAIN _from_web_all() with %s urls' % len(url_list))
+    #    work_on_all = list(url_list)
+    work_on_all = url_list
+    try:
+      personalized_urls_from_web(dbconn, [work_on_all.pop()], mobile=mobile, crawls=1, wait_interval=wait_interval)
+    except IndexError:
+      return
 
 def personalized_urls_from_web(dbconn, url_list, mobile=False, crawls=1, wait_interval=[30,180]):
     """Crawl personalized urls from web pages and store them in table personalized_urls."""
@@ -197,11 +236,11 @@ def personalized_urls_from_web(dbconn, url_list, mobile=False, crawls=1, wait_in
         page = myopener.open(url)
         pagestring = page.read()
         theset = set()
-        blacklist = [ 'tags', 'upload' ]
+        blacklist = [ 'tags', 'upload', 'organize']
         splits = re.split('href="/photos/', pagestring)
         for i in xrange(1, len(splits)):
             maybe = splits[i].partition('/')[0]
-            if maybe not in blacklist and maybe[0] not in [ '"', "'"]:
+            if maybe not in blacklist and len(maybe) > 0 and maybe[0] not in [ '"', "'"]:
                 theset.add(maybe)
         debug('  got %s' % theset)
         return theset
@@ -221,7 +260,7 @@ def personalized_urls_from_web(dbconn, url_list, mobile=False, crawls=1, wait_in
 def get_personalized_urls(dbconn, mobile=None, status=None, all_columns=False, limit=None):
     """Get personalized urls from table personalized_urls with optional filters.
     @param mobile: True for mobile users, False for others
-    @param status: status number. 0 nothing done. 1 person info retrieved. 2 basic photo info retrieved.
+    @param status: status number. 0 nothing done. 1 person info retrieved. 2 basic photo info retrieved. 3 downloaded file and metadata.
     @param all_columns: False: return only personalized url. True: return all from table.
     @param limit: limit number of results. None mean no limit.
     """
@@ -251,10 +290,12 @@ def print_personalized_urls(dbconn, mobile=None, status=None, limit=None):
         print pu
 
 def remove_purl_from_db(dbconn, rm_purl):
+    """Remove row of purl rm_purl from db"""
     dbcursor = dbconn.cursor()
     dbcursor.execute('DELETE from personalized_urls WHERE purl=?', [rm_purl])
     dbconn.commit()
     dbcursor.close()
+
 
 ### USER INFOS, RETRIEVED VIA PERSONALIZED URLS
 
@@ -284,18 +325,16 @@ def check_user_info_table(dbconn):
                            ''')
     dbcursor.close()
 
-
-def api_get_user_info(personalized_url):
+def api_get_user_info(dbconn, personalized_url):
     """Retrieve user information via Flickr API."""
 
     p = {}
     person = None
-    #debug('call: api_get_user_info(%s)' % personalized_url)
     try:
         person = flickr_api.Person.findByUrl('http://www.flickr.com/photos/%s' % personalized_url)    #APICALL
-        time.sleep(1)
+        time.sleep(sleeptime)
         person.load()      #APICALL
-        time.sleep(1)
+        time.sleep(sleeptime)
         for i in [ 'path_alias', 'username', 'realname', 'ispro', 'id', 'nsid', 'location' ]:
             if i in person.__dict__:
                 p[i] = unicode(person[i])
@@ -310,12 +349,12 @@ def api_get_user_info(personalized_url):
     except flickr_api.flickrerrors.FlickrAPIError as api_error:
         if api_error.message.lower().find('user not found') > -1:
             remove_purl_from_db(dbconn, personalized_url)
-            debug('REMOVED personalized url %s (reason: user does not exist (anymore))' % personalized_url)
+            error('REMOVED personalized url %s (reason: user does not exist (anymore))' % personalized_url)
     except:
         print(u'Error at getting user info for: %s' % personalized_url)
-        if person is not None:
-            for i in person.__dict__:
-                print( u' %s:%s' % (i, person[i]))
+        #if person is not None:
+        #    for i in person.__dict__:
+        #        print( u' %s:%s' % (i, person[i.decode('utf-8', 'replace')]))
     return None
 
 def download_user_infos(dbconn, personalized_urls):
@@ -324,11 +363,11 @@ def download_user_infos(dbconn, personalized_urls):
     dbcursor = dbconn.cursor()
     for q in personalized_urls:
         p = q[0]
-        i = api_get_user_info(p)
+        i = api_get_user_info(dbconn, p)
         if i is None:
             continue
         i['path_alias'] = p     # replace unneeded path_alias by personalized url to join purls table
-        debug('download info for %s' % i['nsid'])
+        debug('dl user info purl %s' % i['nsid'])
         dbcursor.execute('''REPLACE INTO user_infos (path_alias, username, realname, is_pro, id, nsid, 
                          location, photo_count, photo_firstdate, photo_firstdatetaken) VALUES 
                          (:path_alias,:username,:realname,:ispro,:id,:nsid,
@@ -397,10 +436,10 @@ def check_photos_table(dbconn):
                                                    PRIMARY KEY (nsid, photo_id) ON CONFLICT ABORT)''')
     dbcursor.close()
 
-def api_get_user_photo(dbcursor, a_user_info):
+def api_get_user_photo(dbconn, a_user_info):
     """Retrieve basic photo information for one photo via Flickt API."""
 
-    debug(' download basic photo data for %s' % a_user_info[0]) 
+    debug('dl basic photo info user %s' % a_user_info[0]) 
     p = flickr_api.Person(username=a_user_info[3], ispro=(a_user_info[5]=='True'), realname=a_user_info[4],
                           path_alias=a_user_info[2], id=a_user_info[1], nsid=a_user_info[0], location=a_user_info[6],
                           p_count=a_user_info[7], p_firstdate=a_user_info[8], p_firstdatetaken=a_user_info[9])
@@ -409,30 +448,34 @@ def api_get_user_photo(dbcursor, a_user_info):
         photos = p.getPublicPhotos()       #APICALL (n times)
     except:
         sys.stderr.write('Error with Person %s' % a_user_info[0])
-    time.sleep(1)
-    # Check is user has photos, if not, completely remove user info/purl from dataset
+    time.sleep(sleeptime)
+    dbcursor = dbconn.cursor()
+    # Check if user has photos, if not, completely remove user info/purl from dataset
     if len(photos) == 0:
         remove_purl_from_db(dbconn, a_user_info[2])
         remove_user_info_from_db(dbconn, a_user_info[0])
-        debug('REMOVED user nsid:%s with personalized url %s from dataset (reason: user has no public photos now)' % (a_user_info[0], a_user_info[2]))
+        error('REMOVED user nsid:%s with personalized url %s from dataset (reason: user has no public photos now)' % (a_user_info[0], a_user_info[2]))
         return None
     x = photos[0]
     dbcursor.execute('''REPLACE INTO photos (nsid, photo_id, photo_secret, photo_farm, photo_server, title) 
                      VALUES (?,?,?,?,?,?)
                      ''',         [a_user_info[0], x['id'], x['secret'], x['farm'], x['server'], x['title']])
-    #dbcursor.execute('UPDATE personalized_urls AS p, user_infos AS u SET p.status=2 WHERE u.path_alias=p.purl and u.nsid=?', [p])
     dbcursor.execute('UPDATE personalized_urls SET status=2 WHERE purl=?', [a_user_info[2]])
 
 
 def download_photos(dbconn, user_infos):
+    """Download a list of one photo per user."""
     dbcursor = dbconn.cursor()
     for user_info in user_infos:
-        api_get_user_photo(dbcursor, user_info)
+        api_get_user_photo(dbconn, user_info)
     dbconn.commit()
     dbcursor.close()
 
 def get_photos(dbconn, status=None, limit=None):
-    #TODO: parameter filter
+    """Get photos from photos table with optional filters.
+    @param status: status number. 0 nothing done. 1 person info retrieved. 2 basic photo info retrieved. 3 downloaded file and metadata.
+    @param limit: limit number of results. None mean no limit.
+    """
 
     if (status is None):
         s = ''
@@ -444,16 +487,18 @@ def get_photos(dbconn, status=None, limit=None):
         l = ' LIMIT %s' % limit
 
     dbcursor = dbconn.cursor()
-    dbcursor.execute('select nsid, photo_id, photo_secret, photo_farm, photo_server, title from photos%s%s' % (s, l))
+    dbcursor.execute('select photos.nsid, photo_id, photo_secret, photo_farm, photo_server, title from photos%s%s' % (s, l))
     all = dbcursor.fetchall() 
     dbcursor.close()
     return all
 
 def print_photos(dbconn):
+    """Print all photos from photos table"""
     for p in get_photos(dbconn):
         print p
 
 def remove_photos_of_user_from_db(dbconn, rm_nsid):
+    """Remove photo of user with nsid rm_nsid from photo table."""
     dbcursor = dbconn.cursor()
     dbcursor.execute('DELETE from photos WHERE nsid=?', [rm_nsid])
     dbconn.commit()
@@ -503,8 +548,11 @@ def check_photo_url_table(dbconn):
                                                        PRIMARY KEY (photo_id) ON CONFLICT ABORT)''')
     dbcursor.close() 
 
-
 def flickr_api_photo_get_info_to_dict(info):
+    """Transform output of flickr_api.getInfo() to a dict.
+    
+    Returned dict is transformable to json via json.dumps."""
+
     if type(info) == dict:
         d = {}
         for k, v in info.items():
@@ -519,14 +567,22 @@ def flickr_api_photo_get_info_to_dict(info):
         return flickr_api_photo_get_info_to_dict(info.__dict__)
     elif isinstance(info, flickr_api.Tag):
         return flickr_api_photo_get_info_to_dict(info.__dict__)
+    elif str(type(info)).find('flickr_api.objects.Note') > -1:
+        #type/isinstance of does not work, why not?
+        return flickr_api_photo_get_info_to_dict(info.__dict__)
     elif type(info) in [str, unicode, int, long, float, bool]:
         return info
     elif info is None:
         return None
     else:
+        error('TODO? type %s not properly converted?' % type(info))
         return unicode(info)
 
 def flickr_api_photo_exif_to_dict(exif):
+    """Transform output of flickr_api.getExif() to a dict.
+    
+    Returned dict is transformable to json via json.dumps."""
+
     blacklist = ['loaded', 'label', 'tagspaceid']
     e = []
     if type(exif) == list:
@@ -540,27 +596,35 @@ def flickr_api_photo_exif_to_dict(exif):
     return e
 
 def download_file(url, destination_path):
+    """Download file from url to destination_path."""
     myopener = MyURLOpener()
     if not destination_path.endswith('/'):
         destination_path += '/'
-    filename = url.rpartition('/')[2]
     try:
+        filename = url.rpartition('/')[2]
         myopener.retrieve(url, '%s%s' % (destination_path, filename))
     except IOError as (errno, strerror):
-        debug('I/O error({0}): {1})'.format(errno, strerror))
+        error('!! I/O error({0}): {1})'.format(errno, strerror))
+        return False
+    except:
+        error('Error downloading URL %s' % url)
         return False
     return True
 
 def api_retrieve_metadata_and_download_file(dbconn, photo):
+    """Download photo file. Retrieve Info and Exif for photo."""
 
     def getPhotoFile(photoinfo, noOriginal='b'):
-        if 'originalsecret' in photoinfo and 'originalformat' in photoinfo:
-            return 'http://farm%s.static.flickr.com/%s/%s_%s_o.%s' % (photoinfo['farm'], photoinfo['server'], 
-                                                                       photoinfo['id'], photoinfo['originalsecret'], 
-                                                                       photoinfo['originalformat'])
-        else:
-            return 'http://farm%s.static.flickr.com/%s/%s_%s_%s.jpg' % (photoinfo['farm'], photoinfo['server'], 
-                                                                       photoinfo['id'], photoinfo['secret'], noOriginal)
+        try:
+          if 'originalsecret' in photoinfo and 'originalformat' in photoinfo:
+              return 'http://farm%s.static.flickr.com/%s/%s_%s_o.%s' % (photoinfo['farm'], photoinfo['server'], 
+                                                                         photoinfo['id'], photoinfo['originalsecret'], 
+                                                                         photoinfo['originalformat'])
+          else:
+              return 'http://farm%s.static.flickr.com/%s/%s_%s_%s.jpg' % (photoinfo['farm'], photoinfo['server'], 
+                                                                           photoinfo['id'], photoinfo['secret'], noOriginal)
+        except:
+          return None
     
     def getPhotoFilename(photofileURL):
         return photofileURL.rpartition('/')[2]
@@ -605,14 +669,21 @@ def api_retrieve_metadata_and_download_file(dbconn, photo):
 
     p = flickr_api.Photo(owner_nsid=photo[0], id=photo[1], secret=photo[2],
                       farm=int(photo[3]), server=int(photo[4]), title=photo[5])
-    debug('download info/exif for photo %s of user %s' % (photo[1], photo[0]))
+    debug('dl info/exif for photo %s of user %s' % (photo[1], photo[0]))
+    perror = None
     try:
-      exif = p.getExif()      #APICALL (n times)
-      time.sleep(1)
+      exif = p.getExif()      #APICALL
+      time.sleep(sleeptime)
     except:
       exif = None
-    info = p.getInfo()      #APICALL (n times)
-    time.sleep(1)
+    try:
+      info = p.getInfo()      #APICALL
+      time.sleep(sleeptime)
+    except flickr_api.flickrerrors.FlickrAPIError as api_error:
+      info = None
+      if api_error.message.lower().find('not found') > -1:
+        perror = api_error.message
+        error('owner %s photo %s: %s:' % (photo[0], photo[1], perror))
     furl = getPhotoFile(info)
     #print exiftojson(exif)
     #print infototags(info)
@@ -622,9 +693,21 @@ def api_retrieve_metadata_and_download_file(dbconn, photo):
     json_info = json.dumps(flickr_api_photo_get_info_to_dict(info), sort_keys=True)
     json_exif = json.dumps(flickr_api_photo_exif_to_dict(exif), sort_keys=True)
     
-    debug('download photo file from %s' % furl)
+    debug('dl photo w/id %s' % photo[1])
     dbcursor = dbconn.cursor()
-    if download_file(furl, photo_file_path) == True:
+    #dbcursor.execute('''SELECT mobile from personalized_urls JOIN user_infos ON 
+    #                 (personalized_urls.purl=user_infos.path_alias) JOIN photos ON 
+    #                 (user_infos.nsid=photos.nsid) where photo_id=?''', [photo[1]])
+
+    dbcursor.execute('''SELECT mobile FROM 
+                     photos JOIN user_infos ON (user_infos.nsid=photos.nsid) 
+                     JOIN personalized_urls ON (user_infos.path_alias=personalized_urls.purl) 
+                     WHERE photo_id=?''', [photo[1]])
+    try:
+      subpath = 'm/' if dbcursor.fetchone()[0] == 1 else 'a/'
+    except TypeError:
+      perror = "SELECT returned empty set (None)."
+    if (perror is None) and (download_file(furl, '%s/%s' % (photo_file_path, subpath)) == True):
         dbcursor.execute('''REPLACE INTO photo_urls (photo_id, url, dlstatus) VALUES 
                          (?, ?, ?)''', [photo[1], furl, 1])
         dbcursor.execute('''REPLACE INTO photo_infos (photo_id, json_photo_info) VALUES 
@@ -636,13 +719,14 @@ def api_retrieve_metadata_and_download_file(dbconn, photo):
     else:
         # photo_infos, photo_exifs, photo_urls will not be updated
         # and now delete purl, user_info and photo
-        purl = dbcursor.execute('''SELECT path_alias from user_infos where nsid=?''', [photo[0]])
+        dbcursor.execute('''SELECT path_alias from user_infos where nsid=?''', [photo[0]])
+        purl = dbcursor.fetchone()[0]
         remove_purl_from_db(dbconn, purl)
         remove_user_info_from_db(dbconn, photo[0])
         remove_photos_of_user_from_db(dbconn, photo[0])
+        error('REMOVED personalized url %s, info about user %s and basic photo information for photo %s (reason: photo file missing)' % (purl, photo[0], photo[1]))
     dbconn.commit()
     dbcursor.close()
-    
     
 def download_metadata_and_photos(dbconn, photos):
     """Downloads extended photo information/metadata for a list of photos.
@@ -651,30 +735,84 @@ def download_metadata_and_photos(dbconn, photos):
 
     for photo in photos:
         api_retrieve_metadata_and_download_file(dbconn, photo)
+#
+
+##############################################
+#################### MAIN ####################
 
 
+interrupt_now = False
+def interrupt(signal, frame):
+    global interrupt_now
+    interrupt_now = True
+    debug('PROGRAM INTERRUPTED')
+
+def init(dbconn):
+    """Check db tables and creates them if not exist."""
+    check_personalized_urls_table(dbconn)
+    check_user_info_table(dbconn)
+    check_photos_table(dbconn)
+    check_photo_infos_table(dbconn)
+    check_photo_exifs_table(dbconn)
+    check_photo_url_table(dbconn)
+
+def main():
+    """The main loop."""
+
+    # stop crawling using: kill -SIGUSR1 `ps -eo "%p%a" |grep "python FlickrAllinOne.py"|grep -v grep|cut -f 2 -d " "`
+    import signal
+    signal.signal(signal.SIGUSR1, interrupt)
+
+    time_start = time.time()
+
+    dbconn = sqlite3.connect(dbfile)
+    init(dbconn)
+
+    limit=50
+    quit=0
+    while 42:
+
+        if interrupt_now == True: break
+        # DOWNLOADING USER INFORMATION, set status=1
+        p = get_personalized_urls(dbconn, status=0, limit=limit)
+        if len(p) == 0:
+          quit += 1
+        # use with "quit > 1", if purl-prefilled db should be emptied and script stopped afterwards
+        if quit > quit:
+            debug('Exiting ... (reason: %s times we had no personalized urls)' % quit)
+            break
+        download_user_infos(dbconn, p)
+        #print_user_infos(dbconn)
+
+        if interrupt_now == True: break
+        # DOWNLOAD BASIC DATA FOR EACH PHOTO w/status=1
+        download_photos(dbconn, get_user_infos(dbconn, status=1, limit=None))
+        #print_photos(dbconn)
+ 
+        if interrupt_now == True: break
+        # DOWNLOAD PHOTO, EXIF AND INFOS
+        download_metadata_and_photos(dbconn, get_photos(dbconn, status=2, limit=None))
+
+        if interrupt_now == True: break 
+        # GET USER PERSONALIZED URLS/NDIS URLS, status=0
+        #personalized_urls_from_file(dbconn, mobile=True, filename='M.txt')
+        #personalized_urls_from_web_all(dbconn, flickr_pages_with_usernames_once, mobile=False, wait_interval=[1,3]) #30-180
+        #if len(flickr_pages_with_usernames_once) == 0: sys.exit(0)
+        personalized_urls_from_web(dbconn, flickr_pages_with_usernames_multiple, mobile=False, crawls=1, wait_interval=[1,3]) #30-180
+#        personalized_urls_from_web(dbconn, flickr_pages_with_usernames_multiple_mobile, mobile=True, crawls=1, wait_interval=[1,3]) #60-1800
+        #personalized_urls_from_web_all(dbconn, flickr_pages_with_usernames_multiple_mobile, mobile=True, wait_interval=[1,3]) #60-1800
+        #print_personalized_urls(dbconn, mobile=True, status=0)
+
+        time_used = time.time() - time_start
+        api_calls = flickr_api.method_call.call_counter
+        debug('%s %s %s' % (time_used, api_calls, api_calls/time_used))
+        
+    dbconn.close()
 
 
-# GET USER PERSONALIZED URLS/NDIS URLS, status=0
-check_personalized_urls_table(dbconn)
-personalized_urls_from_file(dbconn, mobile=True, filename='M.txt')
-#personalized_urls_from_web(dbconn, flickr_pages_with_usernames_once, mobile=False, crawls=1, wait_interval=[30,180])
-#personalized_urls_from_web(dbconn, flickr_pages_with_usernames_multiple, mobile=False, crawls=1, wait_interval=[30,180])
-#personalized_urls_from_web(dbconn, flickr_pages_with_usernames_multiple_mobile, mobile=True, crawls=1, wait_interval=[600,1800])
-print_personalized_urls(dbconn, mobile=True, status=0)
+#
+# JOIN ALL WORKING TABLES BY
+# CREATE TABLE all_in_one AS select mobile, status, purl, username, realname, is_pro, id, user_infos.nsid, location, photo_count, photo_firstdate, photo_firstdatetaken, photos.photo_id, photo_secret, photo_farm, photo_server, title, json_photo_info, json_photo_exif, url from personalized_urls join user_infos on (personalized_urls.purl=user_infos.path_alias) join photos on (user_infos.nsid=photos.nsid) join photo_infos on (photos.photo_id=photo_infos.photo_id) join photo_exifs on (photos.photo_id=photo_exifs.photo_id) join photo_urls on (photos.photo_id=photo_urls.photo_id) LIMIT 10;
 
-# DOWNLOADING USER INFORMATION, set status=1
-check_user_info_table(dbconn)
-download_user_infos(dbconn, get_personalized_urls(dbconn, mobile=True, status=0, limit=None))
-print_user_infos(dbconn)
-
-# DOWNLOAD BASIC DATA FOR EACH PHOTO w/status=1
-check_photos_table(dbconn)
-download_photos(dbconn, get_user_infos(dbconn, status=1, limit=None))
-print_photos(dbconn)
-
-# DOWNLOAD PHOTO, EXIF AND INFOS
-check_photo_infos_table(dbconn)
-check_photo_exifs_table(dbconn)
-check_photo_url_table(dbconn)
-download_metadata_and_photos(dbconn, get_photos(dbconn))
+if __name__ == '__main__':
+    main()
