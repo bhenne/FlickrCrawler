@@ -42,18 +42,30 @@ for root, dirs, files in os.walk(imagepath):
                         if datetimeoriginal.startswith('   ') == True or datetimeoriginal.startswith('000') == True:
                             datetimeoriginal = datetime.datetime.max
                         else:
-                            datetimeoriginal = datetime.datetime.strptime(datetimeoriginal, '%Y:%m:%d %H:%M:%S')
+                            try:
+                                datetimeoriginal = datetime.datetime.strptime(datetimeoriginal, '%Y:%m:%d %H:%M:%S')
+                            except ValueError:
+                                datetimeoriginal = datetime.datetime.max
                     if tag[u'tag'] == u'GPSLatitude':
                         lat_e = tag[u'raw']
             if (datetimeoriginal == datetime.datetime.max) and o == True:
                 metadata = pyexiv2.ImageMetadata(os.path.join(root, name))
                 metadata.read()
                 if 'Exif.Photo.DateTimeOriginal' in metadata.exif_keys:
-                    datetimeoriginal = metadata['Exif.Photo.DateTimeOriginal'].value
+                    d = metadata['Exif.Photo.DateTimeOriginal'].value
+                    #if not d.startswith('   ') == True and not d.startswith('000') == True:
+                    if isinstance(d, datetime.datetime):
+                        datetimeoriginal = d
                 elif 'Exif.Photo.DateTimeDigitized' in metadata.exif_keys:
-                    datetimeoriginal = metadata['Exif.Photo.DateTimeDigitized'].value
+                    d = metadata['Exif.Photo.DateTimeDigitized'].value
+                    #if not d.startswith('   ') == True and not d.startswith('000') == True:
+                    if isinstance(d, datetime.datetime):
+                        datetimeoriginal = d
                 elif 'Exif.Image.DateTime' in metadata.exif_keys:
-                    datetimeoriginal = metadata['Exif.Image.DateTime'].value
+                    d = metadata['Exif.Image.DateTime'].value
+                    #if not d.startswith('   ') == True and not d.startswith('000') == True:
+                    if isinstance(d, datetime.datetime):
+                        datetimeoriginal = d
                 #else:
                 #    print metadata.exif_keys
             if (lat_e == None) and o == True:
