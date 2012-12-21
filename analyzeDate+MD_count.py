@@ -1,6 +1,7 @@
 import csv
 
-datafile = '/home/henne/crawl2/crawlerflickr/Date+MD.tsv'
+#datafile = '/home/henne/crawl2/crawlerflickr/Date+MD.tsv'
+datafile = '/Users/henne/dev/crawlerflickr/Date+MD_50k-mobile.tsv'
 
 f = open(datafile, 'rt')
 tsv = csv.reader(f, delimiter='\t')

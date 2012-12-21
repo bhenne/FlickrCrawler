@@ -5,8 +5,10 @@ import time
 import datetime
 import pyexiv2
 
-imagepath = '/home/henne/crawled_data/Flickr/100k-any/'
-dbfile = '%s/FlickrPhotos-all_in_one.db' % imagepath
+#imagepath = '/home/henne/crawled_data/Flickr/100k-any/'
+#dbfile = '%s/FlickrPhotos-all_in_one.db' % imagepath
+imagepath = '/Users/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/50k-mobile/'
+dbfile = '%s/FlickrPhotos.db' % imagepath
 
 dbconn = sqlite3.connect(dbfile)
 dbcursor = dbconn.cursor()
