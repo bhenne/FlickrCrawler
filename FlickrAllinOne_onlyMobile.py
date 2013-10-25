@@ -14,8 +14,8 @@ import flickr_api       #APICALL (once)
 import json
 
 
-dbfile = '/home/henne/crawled_data/Flickr/FlickrPhoto_onlyMobile.db'
-photo_file_path = '/home/henne/crawled_data/Flickr'
+dbfile = '/home/henne/flickr/data/FlickrPhoto_onlyMobile.db'
+photo_file_path = '/home/henne/flickr/data'
 
 # slow down crawler to respect limit of 1 api call per second
 sleeptime = 0.33
@@ -32,10 +32,18 @@ flickr_pages_with_usernames_multiple = [
 ]
 
 flickr_pages_with_usernames_multiple_mobile = [
+    'http://www.flickr.com/cameras/apple/iphone_5s/',
+    'http://www.flickr.com/cameras/apple/iphone_5/',
     'http://www.flickr.com/cameras/apple/iphone_4s/',
     'http://www.flickr.com/cameras/apple/iphone_4/',
     'http://www.flickr.com/cameras/apple/iphone_3gs/',
     'http://www.flickr.com/cameras/apple/iphone_3g/',
+    'http://www.flickr.com/cameras/htc/one/',
+    'http://www.flickr.com/cameras/htc/one_x-plus/',
+    'http://www.flickr.com/cameras/htc/evo/',
+    'http://www.flickr.com/cameras/htc/one_s/',
+    'http://www.flickr.com/cameras/htc/sensation_4g/',
+    'http://www.flickr.com/cameras/htc/wildfire_s_a510e/',
     'http://www.flickr.com/cameras/htc/evo4g/',
     'http://www.flickr.com/cameras/htc/droid_incredible/',
     'http://www.flickr.com/cameras/htc/desire_hd/',
@@ -52,24 +60,47 @@ flickr_pages_with_usernames_multiple_mobile = [
     'http://www.flickr.com/cameras/lg/kf750/',
     'http://www.flickr.com/cameras/lg/vx-9700/',
     'http://www.flickr.com/cameras/lg/cu720/',
+    'http://www.flickr.com/cameras/lg/vx-9700/',
     'http://www.flickr.com/cameras/nokia/c3-00/',
     'http://www.flickr.com/cameras/nokia/n95/',
     'http://www.flickr.com/cameras/nokia/n8-00/',
+    'http://www.flickr.com/cameras/nokia/lumia_920/',
+    'http://www.flickr.com/cameras/nokia/n8-00/',
+    'http://www.flickr.com/cameras/nokia/808_pureview/',
     'http://www.flickr.com/cameras/nokia/e71/',
     'http://www.flickr.com/cameras/sonyericsson/lt15i/',
     'http://www.flickr.com/cameras/sonyericsson/k800i/',
     'http://www.flickr.com/cameras/sonyericsson/u20i/',
     'http://www.flickr.com/cameras/sonyericsson/seu5i/',
     'http://www.flickr.com/cameras/sonyericsson/c905/',
+    'http://www.flickr.com/cameras/sonyericsson/lt15i/',
     'http://www.flickr.com/cameras/samsung/gt-i9000/',
     'http://www.flickr.com/cameras/samsung/samsung_gt-i9100/',
     'http://www.flickr.com/cameras/samsung/samsung_nexus_s/',
     'http://www.flickr.com/cameras/samsung/sgh-t959v/',
+    'http://www.flickr.com/cameras/samsung/galaxy_s4/',
+    'http://www.flickr.com/cameras/samsung/galaxy_s_iii/',
+    'http://www.flickr.com/cameras/samsung/galaxy-note-ii/',
+    'http://www.flickr.com/cameras/samsung/galaxy-note/',
+    'http://www.flickr.com/cameras/samsung/sgh-i897/',
 ]
 #fpwumm_cats = ['', 'recent', 'portrait', 'macro', 'night','landscape']
 #fpwumm_cats = ['recent', '']
 fpwumm_cats = ['recent']
-fpwumm_ids = [ '72157623237412006', #Evo 4G
+fpwumm_ids = [ '72157627371520786', #iPhone 5
+               '72157631630773540', #iPhone 5s
+               '72157632713261880', # HTC One
+               '72157629104662492', # HTC One X+
+               '72157624405761635', # HTC Evo
+               '72157629483834391', # HTC One S
+               '72157626485303555', # HTC Sensation
+               '72157626351731908', # HTC Wildfire
+               '72157631615124435', # Lumia 920
+               '72157624013405932', # N8
+               '72157629112309640', # Nokia 808 PureView
+               '72157625577590052', # SE Xperia Arc
+               '72157605294024642', # LG VX-9700
+               '72157623237412006', #Evo 4G
                '72157623257214966', #Droid Incredible
                '72157625301186015', #Droid Incredible 2
                '72157607417678583', #Droid Dream
@@ -81,12 +112,17 @@ fpwumm_ids = [ '72157623237412006', #Evo 4G
                '72157627469395877', #iPhone 4s
                '72157620775652629', #iPhone 3GS
                '72157607254796933', #iPhone 3G
+               '72157633043426867', #Samsung S4
+               '72157629852740322', #Samsung S3
+               '72157632755320446', #Samsung Note2
+               '72157627762789555', #Samsung Note
                '72157626485419110', #Galaxy S2
                '72157623985657132', #Galaxy S
                '72157627776523729', #Galaxy Nexus
                '72157625948639270', #Galaxy Ace
                '72157625743838619', #Galaxy S 4G
                '72157624297372018', #Galaxy Epic 4G
+               '72157624356971154', #Samsung Captivate sgh-i897
                '72157629348324157', #Lumia 900
                '72157627740135087', #Lumia 800
                '72157626728398240',
@@ -211,6 +247,20 @@ user_agents = [
 class MyURLOpener(urllib.FancyURLopener, object):
     """URLopener with random user agent."""
     version = random.choice(user_agents)
+
+    def open(self, fullurl, data=None):
+        tries = 0
+        while tries < 5:
+            try:
+                r = super(MyURLOpener, self).open(fullurl, data=None)
+                return r
+            except IOError as e:
+                error("I/O error({0}): {1}".format(e.errno, e.strerror))
+                time.sleep(30*2**tries)
+                tries += 1
+                if tries == 5:
+                    raise
+        raise Exception('To many tries when opening <%s>' % fullurl)
 
 work_on_all = []
 def personalized_urls_from_web_all(dbconn, url_list, mobile=False, wait_interval=[1,3]):
@@ -716,7 +766,7 @@ def api_retrieve_metadata_and_download_file(dbconn, photo):
                      JOIN personalized_urls ON (user_infos.path_alias=personalized_urls.purl) 
                      WHERE photo_id=?''', [photo[1]])
     try:
-      subpath = 'm2/'
+      subpath = 'm/'
     except TypeError:
       perror = "SELECT returned empty set (None)."
     if (perror is None) and (download_file(furl, '%s/%s' % (photo_file_path, subpath)) == True):

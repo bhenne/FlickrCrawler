@@ -12,6 +12,7 @@ import urllib2
 import urllib
 import hashlib
 import json
+import sys
 
 from flickrerrors import FlickrError,FlickrAPIError
 from cache import SimpleCache
@@ -45,11 +46,27 @@ def disable_cache():
     CACHE = None
 
 def send_request(url,data):
+    tries = 0
+    max = 5
     req = urllib2.Request(url,data)
-    try :
-        return urllib2.urlopen(req).read()
-    except urllib2.HTTPError , e:
-        raise FlickrError( e.read().split('&')[0] )
+    while tries < max:
+        try :
+            r = urllib2.urlopen(req).read()
+            return r
+        except urllib2.HTTPError , e:
+            sys.err.write('Error @ flickr_api@send_request,  tries=%s' % tries)
+            tries += 1
+            if tries < max:
+                time.sleep(30*2**tries)
+            else:
+               raise FlickrError( e.read().split('&')[0] )
+        except:
+            sys.err.write('Error @ flickr_api@send_request,  tries=%s' % tries)
+            tries += 1
+            if tries < max:
+                time.sleep(30*2**tries)
+            else:
+                raise
     
 call_counter = 0
 def call_api(api_key = None, api_secret = None, auth_handler = None, needssigning = False,request_url = REST_URL, raw = False,**args):
