@@ -8,14 +8,15 @@ import sys
 
 #imagepath = '/home/henne/crawled_data/Flickr/100k-any/'
 #dbfile = '%s/FlickrPhotos-all_in_one.db' % imagepath
-imagepath = '/home/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/50k-mobile/'
+#imagepath = '/Users/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/50k-mobile/'
+imagepath = '/Users/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/100k-any/'
 dbfile = '%s/FlickrPhotos.db' % imagepath
 
 dbconn = sqlite3.connect(dbfile)
 dbcursor = dbconn.cursor()
 
 #print 'date\tfilename\toriginal\tphoto_id\tlocation\tlocationexif\tlat_info\tlat_exif'
-print 'date\tfilename\toriginal\tphoto_id\tloc_from_file\tloc_exif_flickr\tloc_exif_file\tany_loc\tloc_info_flickr'.replace('\t', ';')
+print 'date\tfilename\toriginal\tphoto_id\tloc_from_file\tloc_exif_flickr\tloc_exif_file\tany_loc\tloc_info_flickr\tmwg_rs\tmp_r'.replace('\t', ';')
 
 errs = 0
 errs2 = 0
@@ -93,6 +94,8 @@ for root, dirs, files in os.walk(imagepath):
 
             lat_f = ''
             lon_f = ''
+            mwg = ''
+            mp = ''
             #if (lat_e == None) and o == True:
             if o == True:
                 metadata = pyexiv2.ImageMetadata(os.path.join(root, name))
@@ -104,6 +107,22 @@ for root, dirs, files in os.walk(imagepath):
                     elif 'Xmp.exif.GPSLatitude' in metadata.xmp_keys and 'Xmp.exif.GPSLongitude' in metadata.xmp_keys:
                         lat_f = metadata['Xmp.exif.GPSLatitude'].value
                         lon_f = metadata['Xmp.exif.GPSLongitude'].value
+                    if 'Xmp.mwg-rs.Regions/mwg-rs:RegionList' in metadata.xmp_keys:
+                        if 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:x' in metadata.xmp_keys and 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:y' in metadata.xmp_keys:
+                            if 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name' in metadata.xmp_keys and metadata['Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name'].value.strip() != '':
+                                mwg = 'named'
+                            else:
+                                mwg = 'unnamed'
+                        elif 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name' in metadata.xmp_keys and metadata['Xmp.mwg-rs.Regions/mwg-rs:RegionL    ist[1]/mwg-rs:Name'].value.strip() != '':
+                            mwg = 'name-only'
+                    if 'Xmp.MP.RegionInfo/MPRI:Regions' in metadata.xmp_keys:
+                        if 'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:Rectangle' in metadata.xmp_keys:
+                            if 'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:PersonDisplayName' in metadata.xmp_keys:
+                                mp = 'named'
+                            else:
+                                mp = 'unnamed'
+                        elif 'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:PersonDisplayName' in metadata.xmp_keys:
+                            mp = 'name-only'
                 except IOError:
                     pass
             # Ref is not used! coordinates are not real ... have no sign
@@ -128,7 +147,7 @@ for root, dirs, files in os.walk(imagepath):
             earlier = uploaded2 if uploaded2 < datetimeoriginal else datetimeoriginal
             #print id, uploaded, datetimeoriginal, lat_i, lat_e, "     ", earlier, loc
             #print '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, loc2, lat_e != None, lat_i, lat_e)
-            print ('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, l_e, l_f, loc2, l_i)).replace('\t', ';')
+            print ('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, l_e, l_f, loc2, l_i, mwg, mp)).replace('\t', ';')
         else:
             errs += 1
             sys.stderr.write('#error: %s\n' % name)
@@ -138,3 +157,12 @@ sys.stderr.write('#errors db: %s\n' % errs2)
 
 dbcursor.close()
 dbconn.close()
+
+
+##### R #####
+# d <- read.csv('loc2.txt', header=TRUE, sep=";", colClasses=c("character", "character", "character", "character", "character", "character", "character", "character", "character"), quote = "")
+# d$d <- substr(d$date, 1, 4)
+# table(d$d)
+# nrow(d[d$d=="2010",])
+# nrow(d[d$d=="2010" & d$loc_from_file=="True",])
+# 100 / nrow(d[d$d=="2010",]) * nrow(d[d$d=="2010" & d$loc_from_file=="True",])
