@@ -8,7 +8,7 @@ import sys
 
 #imagepath = '/home/henne/crawled_data/Flickr/100k-any/'
 #dbfile = '%s/FlickrPhotos-all_in_one.db' % imagepath
-imagepath = '/Users/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/50k-mobile/'
+imagepath = '/home/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/50k-mobile/'
 dbfile = '%s/FlickrPhotos.db' % imagepath
 
 dbconn = sqlite3.connect(dbfile)
@@ -32,7 +32,7 @@ for root, dirs, files in os.walk(imagepath):
             if len(r) == 0:
                 # do something better here
                 errs2 += 1
-                print >> sys.stderr '#err no db data: %s' % id
+                sys.stderr.write('#err no db data: %s\n' % id)
                 continue
 
             info = json.loads(r[0][0])
@@ -131,10 +131,10 @@ for root, dirs, files in os.walk(imagepath):
             print ('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, l_e, l_f, loc2, l_i)).replace('\t', ';')
         else:
             errs += 1
-            print >> sys.stderr '#error: %s' % name
+            sys.stderr.write('#error: %s\n' % name)
 
-print >> sys.stderr '#errors: %s' % errs
-print >> sys.stderr '#errors db: %s' % errs2
+sys.stderr.write('#errors: %s\n' % errs)
+sys.stderr.write('#errors db: %s\n' % errs2)
 
 dbcursor.close()
 dbconn.close()
