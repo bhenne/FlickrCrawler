@@ -188,6 +188,8 @@ for root, dirs, files in os.walk(imagepath):
                 l_f = '%s, %s' % (unicode(lat_f).strip(), unicode(lon_f).strip())
             if l_e == '0 deg 0\' 0.00", 0 deg 0\' 0.00"':
                 l_e = ''
+            if l_f = '0.0, 0.0':
+                l_f = ''
             loc = (lat_e != '' and lon_e !=  '') or (lat_f != '' and lon_f != '')
             loc2 = (lat_i != '' and lon_i != '') or (lat_e != '' and lon_e !=  '') or (lat_f != '' and lon_f != '')
             # USE GPS TIME IF AVAILABLE (note: this is not local time, but UTC), 
