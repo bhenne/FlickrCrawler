@@ -15,6 +15,8 @@ dbfile = '%s/FlickrPhotos.db' % imagepath
 dbconn = sqlite3.connect(dbfile)
 dbcursor = dbconn.cursor()
 
+debug = False    # or = __debug__
+
 #print 'date\tfilename\toriginal\tphoto_id\tlocation\tlocationexif\tlat_info\tlat_exif'
 print 'date\tfilename\toriginal\tphoto_id\tloc_from_file\tloc_exif_flickr\tloc_exif_file\tany_loc\tloc_info_flickr\tmwg_rs\tmp_r'.replace('\t', ';')
 
@@ -36,6 +38,8 @@ for root, dirs, files in os.walk(imagepath):
                 sys.stderr.write('#err no db data: %s\n' % id)
                 continue
 
+            # READ FLICKR PHOTO INFO
+            # get datetime of upload and location
             info = json.loads(r[0][0])
             uploaded =  datetime.datetime.max
             lat_i = ''
@@ -44,12 +48,19 @@ for root, dirs, files in os.walk(imagepath):
                 uploaded = int(info['dateuploaded'])
                 uploaded2 = datetime.datetime.utcfromtimestamp(uploaded)
                 uploaded = time.strftime('%Y:%m:%d %H:%M:%S', time.gmtime(uploaded))
+                if debug:
+                    print "#  dateuploaded", uploaded, uploaded2
             if 'location' in info:
                 lat_i = info['location'][u'latitude']
                 lon_i = info['location'][u'longitude']
 
+            # GET FLICKR-STORED EXIF DATA
+            # get datetimeOriginal, location and gpsDateTime
             exif = json.loads(r[0][1])
             datetimeoriginal = datetime.datetime.max
+            gpsDateTime = datetime.datetime.max
+            gpsDate = ''
+            gpsTime = ''
             lat_e = ''
             lon_e = ''
             for tag in exif:
@@ -67,7 +78,17 @@ for root, dirs, files in os.walk(imagepath):
                         lat_e = tag[u'raw']
                     if tag[u'tag'] == u'GPSLongitude':
                         lon_e = tag[u'raw']
+                    if tag[u'tag'] == u'GPSDateStamp':
+                        gpsDate = tag[u'raw']
+                    if tag[u'tag'] == u'GPSTimeStamp':
+                        gpsTime = tag[u'raw']
+            if gpsDate != '' and gpsTime != '':
+                try:
+                    gpsDateTime = datetime.datetime.strptime('%s %s' % (gpsDate, gpsTime), '%Y:%m:%d %H:%M:%S')
+                except ValueError:
+                    gpsDateTime = datetime.datetime.max
 
+            # IF datetimeOriginal was not in FLICKR-EXIF, TRY to read it FROM FILE
             if (datetimeoriginal == datetime.datetime.max) and o == True:
                 metadata = pyexiv2.ImageMetadata(os.path.join(root, name))
                 try:
@@ -88,9 +109,34 @@ for root, dirs, files in os.walk(imagepath):
                         if isinstance(d, datetime.datetime):
                             datetimeoriginal = d
                     #else:
-                    #    print metadata.exif_keys
+                    #    print "# %s" % metadata.exif_keys
                 except IOError:
                     pass
+            if debug:
+                if datetimeoriginal != datetime.datetime.max:
+                    print "#  datetimeoriginal", datetimeoriginal
+
+            # IF gpsDateTime was not in FLICKR-EXIF, TRY to read it FROM FILE
+            gpsDate = ''
+            gpsTime = ''
+            if (gpsDateTime == datetime.datetime.max) and o == True:
+                try:
+                    metadata.read()
+                    if 'Exif.GPSInfo.GPSDateStamp' in metadata.exif_keys:
+                        gpsDate = metadata['Exif.GPSInfo.GPSDateStamp'].value
+                    if 'Exif.GPSInfo.GPSTimeStamp' in metadata.exif_keys:
+                        gpsTime = metadata['Exif.GPSInfo.GPSTimeStamp'].value
+                except IOError:
+                    pass
+                if gpsDate != '' and gpsTime != '':
+                    try:
+                        gpsDateTime = datetime.datetime.strptime('%s %s' % (gpsDate, gpsTime), '%Y:%m:%d %H:%M:%S')
+                    except ValueError:
+                        gpsDateTime = datetime.datetime.max
+
+            if debug:
+                if gpsDateTime != datetime.datetime.max:
+                    print "#  gpsDateTime", gpsDateTime
 
             lat_f = ''
             lon_f = ''
@@ -144,7 +190,12 @@ for root, dirs, files in os.walk(imagepath):
                 l_e = ''
             loc = (lat_e != '' and lon_e !=  '') or (lat_f != '' and lon_f != '')
             loc2 = (lat_i != '' and lon_i != '') or (lat_e != '' and lon_e !=  '') or (lat_f != '' and lon_f != '')
-            earlier = uploaded2 if uploaded2 < datetimeoriginal else datetimeoriginal
+            # USE GPS TIME IF AVAILABLE (note: this is not local time, but UTC), 
+            # OTHERWISE EARLIER ONE OF UPLOAD TIME OR datetimeoriginal FROM FILE
+            if gpsDateTime != datetime.datetime.max:
+                earlier = gpsDateTime
+            else:
+                earlier = uploaded2 if uploaded2 < datetimeoriginal else datetimeoriginal
             #print id, uploaded, datetimeoriginal, lat_i, lat_e, "     ", earlier, loc
             #print '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, loc2, lat_e != None, lat_i, lat_e)
             print ('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, l_e, l_f, loc2, l_i, mwg, mp)).replace('\t', ';')
