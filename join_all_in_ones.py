@@ -27,6 +27,8 @@ dbfile1 = '/tmp/FlickrPhotos.db'
 dbfile2 = '/tmp/FlickrPhotos_.db'
 dbfile3 = '/tmp/joined.db'
 
+copy_db1_content_also_not_just_diff_of_db2 = False
+
 db1 = sqlite3.connect(dbfile1)
 db2 = sqlite3.connect(dbfile2)
 db3 = sqlite3.connect(dbfile3)
@@ -51,11 +53,12 @@ while r is not None:
     r = c1.fetchone()
 
 
-c1.execute('SELECT mobile, status, purl, username, realname, is_pro, id, nsid, location, photo_count, photo_firstdate, photo_firstdatetaken, photo_id, photo_secret, photo_farm, photo_server, title, json_photo_info, json_photo_exif, url FROM all_in_one')
-r = c1.fetchone()
-while r is not None:
-    c3.execute('INSERT INTO all_in_one (mobile, status, purl, username, realname, is_pro, id, nsid, location, photo_count, photo_firstdate, photo_firstdatetaken, photo_id, photo_secret, photo_farm, photo_server, title, json_photo_info, json_photo_exif, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', r)
+if copy_db1_content_also_not_just_diff_of_db2 == True:
+    c1.execute('SELECT mobile, status, purl, username, realname, is_pro, id, nsid, location, photo_count, photo_firstdate, photo_firstdatetaken, photo_id, photo_secret, photo_farm, photo_server, title, json_photo_info, json_photo_exif, url FROM all_in_one')
     r = c1.fetchone()
+    while r is not None:
+        c3.execute('INSERT INTO all_in_one (mobile, status, purl, username, realname, is_pro, id, nsid, location, photo_count, photo_firstdate, photo_firstdatetaken, photo_id, photo_secret, photo_farm, photo_server, title, json_photo_info, json_photo_exif, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', r)
+        r = c1.fetchone()
 
 
 c2.execute('SELECT mobile, status, purl, username, realname, is_pro, id, nsid, location, photo_count, photo_firstdate, photo_firstdatetaken, photo_id, photo_secret, photo_farm, photo_server, title, json_photo_info, json_photo_exif, url FROM all_in_one')
