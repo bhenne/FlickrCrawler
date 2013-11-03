@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import csv
 import json
 import time
 import datetime
@@ -9,21 +10,45 @@ import sys
 #imagepath = '/home/henne/crawled_data/Flickr/100k-any/'
 #dbfile = '%s/FlickrPhotos-all_in_one.db' % imagepath
 #imagepath = '/Users/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/50k-mobile/'
-imagepath = '/Users/henne/research_data/LocrFlickr_datasets2/Flickr/Flickr/100k-any/'
+imagepath = '/mnt/WORKING-ON/100k-any/'
+imagepath = '/mnt/WORKING-ON/50k-mobile/'
+imagepath = '/home/henne/flickr/data/m/'
 dbfile = '%s/FlickrPhotos.db' % imagepath
+dbfile = '/home/henne/flickr/data/FlickrPhoto_onlyMobile_diffSa.db'
+outfile = '/home/henne/flickr/crawlerflickr/2013.txt'
+csvsep = ';'
+contiue_after_error = True
 
 dbconn = sqlite3.connect(dbfile)
 dbcursor = dbconn.cursor()
 
 debug = False    # or = __debug__
 
-#print 'date\tfilename\toriginal\tphoto_id\tlocation\tlocationexif\tlat_info\tlat_exif'
-print 'date\tfilename\toriginal\tphoto_id\tloc_from_file\tloc_exif_flickr\tloc_exif_file\tany_loc\tloc_info_flickr\tmwg_rs\tmp_r'.replace('\t', ';')
+priorwork = []
+if contiue_after_error == True:
+    try:
+        oldoutfile = open(outfile, 'rt', 1)
+        csvfile = csv.reader(oldoutfile, delimiter=csvsep)
+        for row in csvfile:
+            priorwork.append(row[1])
+        oldoutfile.close()
+    except:
+        priorwork = []
+
+if len(priorwork) == 0:
+    out = open(outfile, 'wt', 1)
+    out.write('date\tfilename\toriginal\tphoto_id\tloc_from_file\tloc_exif_flickr\tloc_exif_file\tany_loc\tloc_info_flickr\tmwg_rs\tmp_r\n'.replace('\t', csvsep))
+else:
+    out = open(outfile, 'at', 1)
 
 errs = 0
 errs2 = 0
-for root, dirs, files in os.walk(imagepath):
-    for name in files:
+#for root, dirs, files in os.walk(imagepath):
+root = imagepath
+for name in os.listdir(imagepath):
+    #for name in files:
+        if name in priorwork:
+            continue
         o = False
         if name.rpartition('.')[0][-1:] == 'o':
             o = True    #: Flickr original file with embedded metadata
@@ -87,6 +112,8 @@ for root, dirs, files in os.walk(imagepath):
                     gpsDateTime = datetime.datetime.strptime('%s %s' % (gpsDate, gpsTime), '%Y:%m:%d %H:%M:%S')
                 except ValueError:
                     gpsDateTime = datetime.datetime.max
+                except TypeError:
+                    gpsDateTime = datetime.datetime.max
 
             # IF datetimeOriginal was not in FLICKR-EXIF, TRY to read it FROM FILE
             if (datetimeoriginal == datetime.datetime.max) and o == True:
@@ -120,6 +147,7 @@ for root, dirs, files in os.walk(imagepath):
             gpsDate = ''
             gpsTime = ''
             if (gpsDateTime == datetime.datetime.max) and o == True:
+                metadata = pyexiv2.ImageMetadata(os.path.join(root, name))
                 try:
                     metadata.read()
                     if 'Exif.GPSInfo.GPSDateStamp' in metadata.exif_keys:
@@ -128,10 +156,15 @@ for root, dirs, files in os.walk(imagepath):
                         gpsTime = metadata['Exif.GPSInfo.GPSTimeStamp'].value
                 except IOError:
                     pass
+                except pyexiv2.exif.ExifValueError:
+                    gpsDate = ''
+                    gpsTime = ''
                 if gpsDate != '' and gpsTime != '':
                     try:
                         gpsDateTime = datetime.datetime.strptime('%s %s' % (gpsDate, gpsTime), '%Y:%m:%d %H:%M:%S')
                     except ValueError:
+                        gpsDateTime = datetime.datetime.max
+                    except TypeError:
                         gpsDateTime = datetime.datetime.max
 
             if debug:
@@ -151,8 +184,12 @@ for root, dirs, files in os.walk(imagepath):
                         lat_f = metadata['Exif.GPSInfo.GPSLatitude'].value
                         lon_f = metadata['Exif.GPSInfo.GPSLongitude'].value
                     elif 'Xmp.exif.GPSLatitude' in metadata.xmp_keys and 'Xmp.exif.GPSLongitude' in metadata.xmp_keys:
-                        lat_f = metadata['Xmp.exif.GPSLatitude'].value
-                        lon_f = metadata['Xmp.exif.GPSLongitude'].value
+                        try:
+                            lat_f = metadata['Xmp.exif.GPSLatitude'].value
+                            lon_f = metadata['Xmp.exif.GPSLongitude'].value
+                        except pyexiv2.xmp.XmpValueError:
+                            lat_f = ''
+                            lon_f = ''
                     if 'Xmp.mwg-rs.Regions/mwg-rs:RegionList' in metadata.xmp_keys:
                         if 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:x' in metadata.xmp_keys and 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:y' in metadata.xmp_keys:
                             if 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name' in metadata.xmp_keys and metadata['Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name'].value.strip() != '':
@@ -188,7 +225,7 @@ for root, dirs, files in os.walk(imagepath):
                 l_f = '%s, %s' % (unicode(lat_f).strip(), unicode(lon_f).strip())
             if l_e == '0 deg 0\' 0.00", 0 deg 0\' 0.00"':
                 l_e = ''
-            if l_f = '0.0, 0.0':
+            if l_f == '0.0, 0.0':
                 l_f = ''
             loc = (lat_e != '' and lon_e !=  '') or (lat_f != '' and lon_f != '')
             loc2 = (lat_i != '' and lon_i != '') or (lat_e != '' and lon_e !=  '') or (lat_f != '' and lon_f != '')
@@ -198,9 +235,7 @@ for root, dirs, files in os.walk(imagepath):
                 earlier = gpsDateTime
             else:
                 earlier = uploaded2 if uploaded2 < datetimeoriginal else datetimeoriginal
-            #print id, uploaded, datetimeoriginal, lat_i, lat_e, "     ", earlier, loc
-            #print '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, loc2, lat_e != None, lat_i, lat_e)
-            print ('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (earlier, name, o, id, loc, l_e, l_f, loc2, l_i, mwg, mp)).replace('\t', ';')
+            out.write(('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (earlier, name, o, id, loc, l_e, l_f, loc2, l_i, mwg, mp)).replace('\t', csvsep))
         else:
             errs += 1
             sys.stderr.write('#error: %s\n' % name)
