@@ -1,13 +1,18 @@
 import os
 
-#imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/photos'
-imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/photos'
-#infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/infos'
-infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/infos'
+imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/photos'
+#imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/photos'
+infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/infos'
+#infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/infos'
+
+import Flickr19GetSelection
+def filtered(filename):
+    #return (filename not in Flickr19GetSelection.dlist)
+    return False
 
 photos = set()
 for name in os.listdir(imagepath):
-    if name.split('.')[-1] in ('jpg', 'jpeg'):
+    if name.split('.')[-1] in ('jpg', 'jpeg') and filtered(name) == False:
        photos.add(name) 
     o = False
     if name.rpartition('.')[0][-1:] == 'o':
