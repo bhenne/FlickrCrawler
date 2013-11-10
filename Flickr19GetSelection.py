@@ -1,3 +1,8 @@
+# get list of downloaded files into python
+#  maybe used for filtering, since these files
+#  are the original selection of exactly 20k/3k photos one made
+#  While we now use the rough 20k/3k photo sets ...
+
 import os
 
 infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/infos'

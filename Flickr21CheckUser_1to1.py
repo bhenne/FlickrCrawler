@@ -1,8 +1,11 @@
+# check if photos of old crawlings really are "one photo per user"
+
 import os
 
 import Flickr20CheckDataset
 
-dir_with_files_each_containing_list_of_photos_of_a_user = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile'
+dir_with_files_each_containing_list_of_photos_of_a_user = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos'
+#dir_with_files_each_containing_list_of_photos_of_a_user = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile'
 n = 1
 
 print "we have %s photos with an info file" % len(Flickr20CheckDataset.photos_with_infos)

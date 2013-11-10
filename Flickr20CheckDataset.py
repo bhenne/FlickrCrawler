@@ -1,9 +1,13 @@
+# check photo files and corresponding info files we used in early crawling instead of sqlite
+#  check how many file are there and IF each or WHICH have also an info file
+#  => clean dataset needs a 1:1 of photo files and info files, others must be removed
+
 import os
 
-imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/photos'
-#imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/photos'
-infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/infos'
-#infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/infos'
+#imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/photos'
+imagepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/photos'
+#infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/infos'
+infospath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/infos'
 
 import Flickr19GetSelection
 def filtered(filename):
