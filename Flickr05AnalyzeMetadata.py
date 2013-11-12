@@ -1,13 +1,16 @@
 """This script reads metadata from image file and Flickr API output, combines it for analysis."""
 
-basepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/'
+#basepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/'
 basepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/'
-CSVfile = 'flickr_data/FlickrDataset-20k-new.txt'
+#CSVfile = 'FlickrDataset-20k-new.txt'
+CSVfile = 'FlickrDataset-3k-new.txt'
 
+import sys
+sys.path.insert(0,"python-flickr-api")
 import pyexiv2
 import codecs
 from Flickr03GetNPhotoURLExif import exifjsontodict
-import sys, os
+import os
 
 pyexiv2.xmp.register_namespace('http://ns.adobe.com/lightroom/1.0/', 'lr')
 pyexiv2.xmp.register_namespace('http://ns.apple.com/faceinfo/1.0/', 'apple-fi')
@@ -34,7 +37,7 @@ PrivateData = {
                    'Exif.Image.XPTitle', 'Xmp.dc.title', 'Xmp.photoshop.Headline', ],
     'Description' : [ 'Iptc.Application2.Caption', 'Exif.Image.UserComment'
                       'Xmp.dc.description', 'Xmp.tiff.ImageDescription', ], # caption=abstract in Iptc case...
-    # CHECK !!! 'Description' : [ 'Exif.Image.ImageDescription', #ImageDescription contains lots of Camera Model names?!
+                    # Attention !!! 'Description' : [  #ImageDescription contains lots of Camera Model names?!
     'CameraMaker' : [ 'Exif.Image.Make' ],
     'CameraModel' : [ 'Exif.Image.Model' ],
     'GPSLatitude' : [ 'Exif.GPSInfo.GPSLatitude', 'Xmp.exif.GPSLatitude' ],
@@ -59,9 +62,6 @@ PrivateData = {
                          'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name', ],
 }
 
-caseinsensitive = {}
-for key in PrivateData.keys():
-    caseinsensitive[key] = [t.lower() for tag in PrivateData[key]]
 
 def unpack(x):
     if type(x) == str:
@@ -89,9 +89,9 @@ def analyze_photo(path, file):
         metadata.read()
     except IOError, strerror:
         print "I/O error on file %s: %s" % (file, strerror)
-        return False
+        #return False
+        return {}
     metadata_keys = metadata.keys()
-    metadata_keys = [ k.lower() for k in metadata_keys ] # lower case
     
     extractedData = {}
     for key in sorted(PrivateData):
@@ -228,9 +228,9 @@ def iterate_files(basepath, out='sys.stdout'):
             out.write(line.replace('\n', ' '))
             out.write('\n')
             l += 1
-            sys.stdout.write('%s\n' % l)
+            #sys.stdout.write('%s\n' % l)
         else:
-            sys.stderr.write('No suitable file: %s\n' % file)
+            sys.stderr.write('Ignoring: %s\n' % file)
     return l
 
 
