@@ -1,36 +1,67 @@
-"l""This script reads metadata from image file and Flickr API output, combines it for analysis."""
+"""This script reads metadata from image file and Flickr API output, combines it for analysis."""
 
-basepath = 'flickr_photos_test/'
-CSVfile = 'flickr_data/FlickrDatasetTest.txt'
+basepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos/'
+basepath = '/Users/henne/research_data/LocrFlickr_datasets1/flickr-files/flickr_photos_mobile/'
+CSVfile = 'flickr_data/FlickrDataset-20k-new.txt'
 
 import pyexiv2
 import codecs
 from Flickr03GetNPhotoURLExif import exifjsontodict
 import sys, os
 
+pyexiv2.xmp.register_namespace('http://ns.adobe.com/lightroom/1.0/', 'lr')
+pyexiv2.xmp.register_namespace('http://ns.apple.com/faceinfo/1.0/', 'apple-fi')
+
 
 PrivateData = {
-    'CameraOwner' : [ 'Exif.Canon.OwnerName' ],
+    'CameraOwner' : [ 'Exif.Photo.CameraOwnerName', 'Exif.Canon.OwnerName', ],
+    'CameraID' : [ 'Exif.Canon.InternalSerialNumber', 'Exif.Canon.SerialNumber', 
+                   'Exif.Fujifilm.SerialNumber', 'Exif.Image.CameraSerialNumber', 
+                   'Exif.Nikon3.SerialNO', 'Exif.Nikon3.SerialNumber', 
+                   'Exif.Olympus.SerialNumber2', 'Exif.OlympusEq.InternalSerialNumber', 
+                   'Exif.OlympusEq.SerialNumber', 'Exif.Panasonic.InternalSerialNumber', 
+                   'Exif.Pentax.SerialNumber', 'Exif.Photo.BodySerialNumber', 
+                   'Exif.Sigma.SerialNumber', 'Xmp.aux.SerialNumber',
+                   'Xmp.MicrosoftPhoto.CameraSerialNumber', ], 
+    'Artist' : [ 'Exif.Image.Artist', 'Xmp.tiff.Artist', 'Xmp.xmpDM.artist', 
+                 'Iptc.Application2.Byline', 'Xmp.dc.creator', 'Xmp.iptcExt.AOCreator',
+                 'Xmp.plus.ImageCreatorName', ], 
+    'Copyright' : [ 'Exif.Image.Copyright', 'Xmp.plus.CopyrightOwnerName', ], 
+    'Keywords' : [ 'Exif.Image.XPKeywords', 'Iptc.Application2.Keywords', 
+                   'Xmp.dc.Subject', 'Exif.Image.XPKeywords', 
+                   'Xmp.lr.hierarchicalSubject', ],
+    'Headline' : [ 'Iptc.Application2.Headline', 'Exif.Image.ImageDescription', 
+                   'Exif.Image.XPTitle', 'Xmp.dc.title', 'Xmp.photoshop.Headline', ],
+    'Description' : [ 'Iptc.Application2.Caption', 'Exif.Image.UserComment'
+                      'Xmp.dc.description', 'Xmp.tiff.ImageDescription', ], # caption=abstract in Iptc case...
+    # CHECK !!! 'Description' : [ 'Exif.Image.ImageDescription', #ImageDescription contains lots of Camera Model names?!
     'CameraMaker' : [ 'Exif.Image.Make' ],
     'CameraModel' : [ 'Exif.Image.Model' ],
-    'CameraID' : [ 'Exif.Canon.SerialNumber', 'Exif.Fujifilm.SerialNumber', 'Exif.Nikon3.SerialNumber', 'Exif.Pentax.SerialNumber', 'Exif.Photo.0xa431' 
-                   'Exif.Nikon3.SerialNO', 'Exif.Olympus.SerialNumber2', 'Exif.Panasonic.InternalSerialNumber', 'Exif.Sigma.SerialNumber', 'Xmp.aux.SerialNumber' ],
-    'Artist' : [ 'Exif.Image.Artist', 'Iptc.Application2.Byline', 'Xmp.dc.creator' ],
-    'Keywords' : [ 'Iptc.Application2.Keywords', 'Xmp.dc.subject', 'Xmp.lr.hierarchicalSubject'],
-    'Description' : [ 'Xmp.dc.description', 'Iptc.Application2.Caption' ],
-    #'Description' : [ 'Exif.Image.ImageDescription', 'Xmp.dc.description', 'Iptc.Application2.Caption' ], #ImageDescription contains lots of Camera Model names?!
-    'Headline' : [ 'Xmp.photoshop.Headline', 'Iptc.Application2.Headline' ],
-    'Location' : [ 'Xmp.iptc.Location', 'Iptc.Application2.SubLocation' ],
-    'City' : [ 'Iptc.Application2.City', 'Xmp.photoshop.City' ],
-    'State' : [ 'Iptc.Application2.ProvinceState', 'Xmp.photoshop.State' ],
-    'Country' : [ 'Iptc.Application2.CountryName', 'Iptc.Application2.CountryCode', 'Xmp.photoshop.Country', 'Xmp.iptc.CountryCode' ],
     'GPSLatitude' : [ 'Exif.GPSInfo.GPSLatitude', 'Xmp.exif.GPSLatitude' ],
     'GPSLongitude' : [ 'Exif.GPSInfo.GPSLongitude', 'Xmp.exif.GPSDestLongitude' ],
-    'PersonRegion' : [ 'Xmp.MP.RegionInfo', 'Xmp.MP.RegionInfo/MPRI:Regions', 
-                       'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:Rectangle',
-                       'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:PersonDisplayName'  ]
+    'UnkownLocation' : [ 'Exif.Samsung2.LocationName', 'Exif.Samsung2.LocalLocationName', # http://www.flickr.com/photos/frankeggen/9336533018/meta/
+                         'Exif.Pentax.Location', ], 
+    'Country' : [ 'Iptc.Application2.CountryCode', 'Iptc.Application2.CountryName',
+                  'Iptc.Application.LocationCode', 'Xmp.photoshop.Country',
+                  'Xmp.iptcExt.CountryCode', 'Xmp.iptcext.CountryName',
+                  'Xmp.iptc.CountryCode', ],
+    'State' : [ 'Iptc.Application2.ProvinceState', 'Xmp.iptcExt.ProvinceState',
+                'Xmp.photoshop.State', ],
+    'City': [ 'Iptc.Application2.City', 'Xmp.iptcExt.City',
+              'Xmp.photoshop.City', ],
+    'Location' : [ 'Iptc.Application2.SubLocation', 'Iptc.Application2.LocationName', # could also be country ... "according to guidelines of the provider."
+                   'Xmp.iptc.Location', 'Xmp.iptcExt.SubLocation',
+                   'Xmp.iptcExt.LocationShown', 'Xmp.iptcExt.LocationCreated',
+                   'Xmp.xmpDM.shotLocation', ],
+    'PersonRegion' : [ 'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:Rectangle',
+                       'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area', ],
+    'PersonRegionName' : [ 'Xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:PersonDisplayName',
+                         'Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name', ],
 }
 
+caseinsensitive = {}
+for key in PrivateData.keys():
+    caseinsensitive[key] = [t.lower() for tag in PrivateData[key]]
 
 def unpack(x):
     if type(x) == str:
@@ -60,6 +91,7 @@ def analyze_photo(path, file):
         print "I/O error on file %s: %s" % (file, strerror)
         return False
     metadata_keys = metadata.keys()
+    metadata_keys = [ k.lower() for k in metadata_keys ] # lower case
     
     extractedData = {}
     for key in sorted(PrivateData):
