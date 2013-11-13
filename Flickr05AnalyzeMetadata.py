@@ -35,18 +35,20 @@ PrivateData = {
                    'Xmp.lr.hierarchicalSubject', ],
     'Headline' : [ 'Iptc.Application2.Headline', 'Exif.Image.ImageDescription', 
                    'Exif.Image.XPTitle', 'Xmp.dc.title', 'Xmp.photoshop.Headline', ],
-    'Description' : [ 'Iptc.Application2.Caption', 'Exif.Image.UserComment'
+    'Description' : [ 'Iptc.Application2.Caption', 'Exif.Photo.UserComment', 'Exif.Image.UserComment',
                       'Xmp.dc.description', 'Xmp.tiff.ImageDescription', ], # caption=abstract in Iptc case...
                     # Attention !!! 'Description' : [  #ImageDescription contains lots of Camera Model names?!
     'CameraMaker' : [ 'Exif.Image.Make' ],
     'CameraModel' : [ 'Exif.Image.Model' ],
-    'GPSLatitude' : [ 'Exif.GPSInfo.GPSLatitude', 'Xmp.exif.GPSLatitude' ],
-    'GPSLongitude' : [ 'Exif.GPSInfo.GPSLongitude', 'Xmp.exif.GPSDestLongitude' ],
+    'GPSLatitude' : [ 'Exif.GPSInfo.GPSLatitude', 'Xmp.exif.GPSLatitude', 
+                      'Exif.GPSInfo.GPSDestLatitude', 'Xmp.exif.GPSDestLatitude' ],
+    'GPSLongitude' : [ 'Exif.GPSInfo.GPSLongitude', 'Xmp.exif.GPSLongitude',
+                       'Exif.GPSInfo.GPSDestLongitude', 'Xmp.exif.GPSDestLongitude', ],
     'UnkownLocation' : [ 'Exif.Samsung2.LocationName', 'Exif.Samsung2.LocalLocationName', # http://www.flickr.com/photos/frankeggen/9336533018/meta/
                          'Exif.Pentax.Location', ], 
     'Country' : [ 'Iptc.Application2.CountryCode', 'Iptc.Application2.CountryName',
-                  'Iptc.Application.LocationCode', 'Xmp.photoshop.Country',
-                  'Xmp.iptcExt.CountryCode', 'Xmp.iptcext.CountryName',
+                  'Iptc.Application2.LocationCode', 'Xmp.photoshop.Country',
+                  'Xmp.iptcExt.CountryCode', 'Xmp.iptcExt.CountryName',
                   'Xmp.iptc.CountryCode', ],
     'State' : [ 'Iptc.Application2.ProvinceState', 'Xmp.iptcExt.ProvinceState',
                 'Xmp.photoshop.State', ],
