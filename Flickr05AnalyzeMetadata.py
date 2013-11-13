@@ -11,6 +11,7 @@ import pyexiv2
 import codecs
 from Flickr03GetNPhotoURLExif import exifjsontodict
 import os
+import re
 
 pyexiv2.xmp.register_namespace('http://ns.adobe.com/lightroom/1.0/', 'lr')
 pyexiv2.xmp.register_namespace('http://ns.apple.com/faceinfo/1.0/', 'apple-fi')
@@ -31,8 +32,7 @@ PrivateData = {
                  'Xmp.plus.ImageCreatorName', ], 
     'Copyright' : [ 'Exif.Image.Copyright', 'Xmp.plus.CopyrightOwnerName', ], 
     'Keywords' : [ 'Exif.Image.XPKeywords', 'Iptc.Application2.Keywords', 
-                   'Xmp.dc.Subject', 'Exif.Image.XPKeywords', 
-                   'Xmp.lr.hierarchicalSubject', ],
+                   'Xmp.dc.Subject', 'Xmp.lr.hierarchicalSubject', ],
     'Headline' : [ 'Iptc.Application2.Headline', 'Exif.Image.ImageDescription', 
                    'Exif.Image.XPTitle', 'Xmp.dc.title', 'Xmp.photoshop.Headline', ],
     'Description' : [ 'Iptc.Application2.Caption', 'Exif.Photo.UserComment', 'Exif.Image.UserComment',
@@ -103,6 +103,30 @@ def analyze_photo(path, file):
             if field in metadata_keys:
                 v = unpack(metadata[field].raw_value)   ### FIX BAD UTF ERRORS
                 #v = unpack(metadata[field].value)  ### ALSO HERE BAD UNICODE #!?#!%& and NotifyingList foo
+                # cleanup values
+                i = 0
+                while i < 10:
+                    if re.match('^[\d-]+$', v) is not None:
+                        break
+                    if v.upper() == v and (re.match('^[\w\s-]+$', v) is not None and re.match('^[\D-]+$', v) is not None):
+                        v = ''
+                        break
+                    if v == 'unknown':
+                        v = ''
+                        break
+                    v.replace('\x00','')
+                    if v.startswith("u'") or v.startswith('u"'):
+                        v = v.lstrip('u')
+                    if v.startswith('charset="Ascii"'):
+                        v = v.lstrip('charset="Ascii"')
+                    if v.startswith('charset="InvalidCharsetId"'):
+                        v = v.lstrip('charset="InvalidCharsetId"')
+                    if v.startswith('x-default:'):
+                        v = v.lstrip('x-default:')
+                    v = v.strip("\"'")
+                    v = v.strip('\x00')
+                    v = v.strip(' ')
+                    i += 1
                 if v != '':
                     val.add(v)
         if len(val) > 0:

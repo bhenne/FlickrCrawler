@@ -8,8 +8,10 @@ import codecs
 import csv
 import sys
 
-#CSVFILE = 'FlickrDataset-20k-new.txt'
-CSVFILE = 'FlickrDataset-3k-new.txt'
+CSVFILE = 'FlickrDataset-20k-new.txt'
+#CSVFILE = 'FlickrDataset-20k-new2.txt'
+#CSVFILE = 'FlickrDataset-3k-new.txt'
+#CSVFILE = 'FlickrDataset-3k-new2.txt'
 outfile = CSVFILE.rstrip('.txt') + '_filtered.txt'
 #outfile = None
 
