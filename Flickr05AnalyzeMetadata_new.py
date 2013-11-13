@@ -14,6 +14,7 @@ import json
 import codecs
 #from Flickr03GetNPhotoURLExif import exifjsontodict
 import os
+import re
 import datetime
 
 dbcursor = None
@@ -109,6 +110,30 @@ def analyze_photo(path, file):
             if field in metadata_keys:
                 v = unpack(metadata[field].raw_value)   ### FIX BAD UTF ERRORS
                 #v = unpack(metadata[field].value)  ### ALSO HERE BAD UNICODE #!?#!%& and NotifyingList foo
+                # cleanup values
+                i = 0
+                while i < 10:
+                    if re.match('^[\d-]+$', v) is not None:
+                        break
+                    if v.upper() == v and (re.match('^[\w\s-]+$', v) is not None and re.match('^[\D-]+$', v) is not None):
+                        v = ''
+                        break
+                    if v == 'unknown':
+                        v = ''
+                        break
+                    v.replace('\x00','')
+                    if v.startswith("u'") or v.startswith('u"'):
+                        v = v.lstrip('u')
+                    if v.startswith('charset="Ascii"'):
+                        v = v.lstrip('charset="Ascii"')
+                    if v.startswith('charset="InvalidCharsetId"'):
+                        v = v.lstrip('charset="InvalidCharsetId"')
+                    if v.startswith('x-default:'):
+                        v = v.lstrip('x-default:')
+                    v = v.strip("\"'")
+                    v = v.strip('\x00')
+                    v = v.strip(' ')
+                    i += 1
                 if v != '':
                     val.add(v)
         if len(val) > 0:
@@ -123,8 +148,8 @@ flickr_keys = [ 'flickr_url', 'flickr_tags', 'flickr_title', 'flickr_description
 
 flickrexiflist = [
     ('IFD0', 'ImageDescription', 'Description'),
-    ('IFD0', 'Make', 'Make'),
-    ('IFD0', 'Model', 'Model'),
+    ('IFD0', 'Make', 'CameraMaker'),
+    ('IFD0', 'Model', 'CameraModel'),
     ('IFD0', 'Artist', 'Artist'),
     ('IFD0', 'Copyright', 'Copyright'),
     ('IFD0', 'XPTitle', 'Headline'),
@@ -169,6 +194,17 @@ flickrexiflist = [
     ('XMP-MP', 'RegionRectangle', 'PersonRegion'),
     ('XMP-lr', 'HierarchicalSubject', 'Keywords'),
     ('XMP-mwg-rs', 'RegionName', 'PersonRegionName'),
+    ('Canon', 'CameraOwner', 'CameraOwner'),
+    ('Canon', 'SerialNumber', 'CameraID'),
+    ('Kodak', 'SerialNumber', 'CameraID'),
+    ('MetaIFD', 'SerialNumber', 'CameraID'),
+    ('Nikon', 'SerialNumber', 'CameraID'),
+    ('Olympus', 'SerialNumber', 'CameraID'),
+    ('Pentax', 'SerialNumber', 'CameraID'),
+    ('Ricoh', 'SerialNumber', 'CameraID'),
+    ('Sigma', 'SerialNumber', 'CameraID'),
+    ('XMP-aux', 'OwnerName', 'CameraOwner'),
+    ('XMP-aux', 'SerialNumber', 'CameraID'),
     ('IPTC', 'By-line', 'Artist'),
     ('IPTC', 'Keywords', 'Keywords'),
     ('IPTC', 'Headline', 'Headline'),
@@ -182,7 +218,6 @@ flickrexiflist = [
     ('IPTC', 'ContentLocationName', 'Location'),
         ]
 
-
 def exiftodict(exif):
     """Transforms a Flickr Exif object to a dict"""
     if len(exif) == 0:
@@ -195,7 +230,7 @@ def exiftodict(exif):
     for tag in e:
         for i in flickrexiflist:
             # flickrexiflist = [ (tagspace, tag, mapping) ]
-            if tag['tagspace'] == i[0] and tag['tag'] == i[1]:
+            if tag['tagspace'] == i[0] and tag['tag'] == i[1] and tag['raw'] is not None:
                 tags[i[2]] = tags.get(i[2], u',') + tag['raw']
     for k in tags.keys():
         tags[k] = tags[k].lstrip(',')
@@ -224,7 +259,11 @@ def analyze_apiinfo(file):
             tags.append(t['text'])
         tags = ','.join(tags)
 
-    exif = exiftodict(eval(exifjson))
+    exifjson = exifjson.rstrip('\n').replace('false','False').replace('null','None')
+    if exifjson != '':
+        exif = exiftodict(eval(exifjson))
+    else:
+        exif = {}
     
     extractedData = {}
     extractedData['flickr_url'] = url
