@@ -31,7 +31,7 @@ def readdir(newfiles, donefiles):
     debug("readdir")
     now = datetime.datetime.now()
     for f in os.listdir(photodir):
-        if f not in donefiles:
+        if f not in donefiles and f.endswith('.jpg'):
             d = modification_date(os.path.join(photodir, f))
             #if (now - d > datetime.timedelta(days=17, hours=21, minutes=55)):
             if (now - d > datetime.timedelta(days=14)):
@@ -50,11 +50,16 @@ def flickr_photo_gne(filename):
         if r.msg.dict['location'].find(filename) > -1:
             return "noauth", "noauth"
         url = r.msg.dict['location']
-        trash, trash2, uid, pid, trash3 = url.split('/')
+        try:
+            trash, trash2, uid, pid, trash3 = url.split('/')
+        except:
+            print >> sys.stderr, r.status, url
+            return url
+            raise
         return uid, pid
     elif r.status == 404:
         return "notex", "notex"
-    print r.status, filename
+    print >> sys.stderr, r.status, filename
     return r.status
 
 def save(msg, newfiles, donefiles):
