@@ -292,7 +292,7 @@ def work_on_file(basepath, filename):
     x = analyze_apiinfo(filename)
     if (p == False) or (x == False):
         return ''
-    #data.update(analyze_photo(photo_path, filename))
+    data.update(analyze_photo(photo_path, filename))
     data.update(analyze_apiinfo(filename))
 
     line = u''
