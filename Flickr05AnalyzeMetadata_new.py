@@ -248,10 +248,15 @@ def analyze_apiinfo(file):
     flickrinfo = json.loads(flickrinfo)
     people = flickrinfo['people']['haspeople']
     location = ''
+    woeid_country = ''
     if 'location' in flickrinfo:
         loc = flickrinfo['location']
         if 'latitude' in loc and 'longitude' in loc:
             location = '%s,%s' % (loc['latitude'], loc['longitude'])
+        if 'country' in loc:
+            woeid_country = '%s=%s' % (loc['country'].get('place_id', ''), loc['country'].get('woeid', ''))
+    if woeid_country != '':
+        print woeid_country
     tags = []
     if 'tags' in flickrinfo:
         taglist = flickrinfo['tags']
