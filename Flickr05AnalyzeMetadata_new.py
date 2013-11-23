@@ -141,6 +141,7 @@ def analyze_photo(path, file):
     return extractedData
 
 flickr_keys = [ 'flickr_url', 'flickr_tags', 'flickr_title', 'flickr_description', 'flickr_GPS', 'flickr_haspeople', 
+                'flickr_location', 'flickr_city', 'flickr_state', 'flickr_country',
                 'axif_Artist', 'axif_CameraID', 'axif_CameraMaker', 'axif_CameraModel', 'axif_CameraOwner', 
                 'axif_City', 'axif_Copyright', 'axif_Country', 'axif_Description', 'axif_GPSLatitude', 
                 'axif_GPSLongitude', 'axif_Headline', 'axif_Keywords', 'axif_Location', 'axif_PersonRegion', 
@@ -248,15 +249,25 @@ def analyze_apiinfo(file):
     flickrinfo = json.loads(flickrinfo)
     people = flickrinfo['people']['haspeople']
     location = ''
-    woeid_country = ''
+    # http://www.flickr.com/services/api/flickr.places.placesForUser.html
+    # http://developer.yahoo.com/geo/geoplanet/guide/concepts.html 
+    woeid_country = ''   #: 12: country = country: One of the countries and dependent territories defined by the ISO 3166-1 standard.
+    woeid_region = ''   #: 8: region = admin: One of the primary administrative areas within a country. Place type names associated with this place type include: State, Province, Prefecture, Country, Region, Federal District.
+    woeid_city = ''   #: 7: locality = town: One of the major populated places within a country. This category includes incorporated cities and towns, major unincorporated towns and villages.
+    woeid_neighbourhood = ''    #: 22: neighbourhood = suburb: One of the subdivisions within a town. This category includes suburbs, neighborhoods, wards.
     if 'location' in flickrinfo:
         loc = flickrinfo['location']
+        print loc
         if 'latitude' in loc and 'longitude' in loc:
             location = '%s,%s' % (loc['latitude'], loc['longitude'])
         if 'country' in loc:
             woeid_country = '%s=%s' % (loc['country'].get('place_id', ''), loc['country'].get('woeid', ''))
-    if woeid_country != '':
-        print woeid_country
+        if 'region' in loc:
+            woeid_region = '%s=%s' % (loc['region'].get('place_id', ''), loc['region'].get('woeid', ''))
+        if 'locality' in loc:
+            woeid_city = '%s=%s' % (loc['locality'].get('place_id', ''), loc['locality'].get('woeid', ''))
+        if 'neighbourhood' in loc:
+            woeid_neighbourhood = '%s=%s' % (loc['neighbourhood'].get('place_id', ''), loc['neighbourhood'].get('woeid', ''))
     tags = []
     if 'tags' in flickrinfo:
         taglist = flickrinfo['tags']
@@ -277,6 +288,10 @@ def analyze_apiinfo(file):
     extractedData['flickr_description'] = flickrinfo['description'] if 'description' in flickrinfo else ''
     extractedData['flickr_GPS'] = location
     extractedData['flickr_haspeople'] = str(people)
+    extractedData['flickr_location'] = woeid_neighbourhood
+    extractedData['flickr_city'] = woeid_city
+    extractedData['flickr_state'] = woeid_region
+    extractedData['flickr_country'] = woeid_country
 
     try:
         for k in exif.keys():
