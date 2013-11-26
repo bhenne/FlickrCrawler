@@ -3,12 +3,16 @@
 A=photo-3k-mobile.txt, B=photo-20k-any.txt, A: 3258, B: 20836, onlyA: 3144, onlyB: 20722, both: 114
 A=photo-3k-mobile.txt, B=photo-50k-mobile.txt, A: 3258, B: 50203, onlyA: 3245, onlyB: 50190, both: 13
 A=photo-3k-mobile.txt, B=photo-100k-any.txt, A: 3258, B: 100710, onlyA: 3257, onlyB: 100709, both: 1
+A=photo-3k-mobile.txt, B=photo-54k-mobile.txt, A: 3258, B: 54086, onlyA: 3258, onlyB: 54086, both: 0
 A=photo-20k-any.txt, B=photo-50k-mobile.txt, A: 20836, B: 50203, onlyA: 20833, onlyB: 50200, both: 3
 A=photo-20k-any.txt, B=photo-100k-any.txt, A: 20836, B: 100710, onlyA: 20464, onlyB: 100338, both: 372
+A=photo-20k-any.txt, B=photo-54k-mobile.txt, A: 20836, B: 54086, onlyA: 20836, onlyB: 54086, both: 0
 A=photo-50k-mobile.txt, B=photo-100k-any.txt, A: 50203, B: 100710, onlyA: 49901, onlyB: 100408, both: 302
+A=photo-50k-mobile.txt, B=photo-54k-mobile.txt, A: 50203, B: 54086, onlyA: 50203, onlyB: 54086, both: 0
+A=photo-100k-any.txt, B=photo-54k-mobile.txt, A: 100710, B: 54086, onlyA: 100710, onlyB: 54086, both: 0
 """
 
-files = [ 'photo-3k-mobile.txt', 'photo-20k-any.txt', 'photo-50k-mobile.txt', 'photo-100k-any.txt' ]
+files = [ 'photo-3k-mobile.txt', 'photo-20k-any.txt', 'photo-50k-mobile.txt', 'photo-100k-any.txt', 'photo-54k-mobile.txt' ]
 
 def compare(filea, fileb):
     a = set()

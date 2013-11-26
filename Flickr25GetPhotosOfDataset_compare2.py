@@ -1,12 +1,13 @@
 """compare two list of photos to find difference
 
-A=photo-100k-any.txt, B=not_photo-100k-any.txt, A: 100710, B: 74168, onlyA: 100035, onlyB: 73493, both: 675
-A=photo-3k-mobile.txt, B=not_photo-3k-mobile.txt, A: 3258, B: 171072, onlyA: 3131, onlyB: 170945, both: 127
-A=photo-20k-any.txt, B=not_photo-20k-any.txt, A: 20836, B: 153855, onlyA: 20348, onlyB: 153367, both: 488
-A=photo-50k-mobile.txt, B=not_photo-50k-mobile.txt, A: 50203, B: 124317, onlyA: 49886, onlyB: 124000, both: 317
+A=photo-100k-any.txt, B=not_photo-100k-any.txt, A: 100710, B: 128254, onlyA: 100035, onlyB: 127579, both: 675
+A=photo-54k-mobile.txt, B=not_photo-54k-mobile.txt, A: 54086, B: 174203, onlyA: 54086, onlyB: 174203, both: 0
+A=photo-3k-mobile.txt, B=not_photo-3k-mobile.txt, A: 3258, B: 225158, onlyA: 3131, onlyB: 225031, both: 127
+A=photo-20k-any.txt, B=not_photo-20k-any.txt, A: 20836, B: 207941, onlyA: 20348, onlyB: 207453, both: 488
+A=photo-50k-mobile.txt, B=not_photo-50k-mobile.txt, A: 50203, B: 178403, onlyA: 49886, onlyB: 178086, both: 317
 """
 
-files = [ 'photo-3k-mobile.txt', 'photo-20k-any.txt', 'photo-50k-mobile.txt', 'photo-100k-any.txt' ]
+files = [ 'photo-3k-mobile.txt', 'photo-20k-any.txt', 'photo-50k-mobile.txt', 'photo-100k-any.txt' , 'photo-54k-mobile.txt']
 
 def compare(a, b, filea='', fileb=''):
 
