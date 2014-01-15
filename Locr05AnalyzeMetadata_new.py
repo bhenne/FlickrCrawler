@@ -164,11 +164,11 @@ def analyze_html(path, file):
         path += '/'
     #f = codecs.open('%s%s' % (path, file), 'r', 'utf-8', 'strict')
     f = codecs.open('%s%s' % (path, file), 'r', 'utf-8', 'replace')
-    try:
-      s = f.read()
-    except UnicodeDecodeError:
-      f = codecs.open('%s%s' % (path, file), 'r', 'latin-1', 'strict')
-      s = f.read()
+    #try:
+    #  s = f.read()
+    #except UnicodeDecodeError:
+    #f = codecs.open('%s%s' % (path, file), 'r', 'latin-1', 'strict')
+    s = f.read()
     from lxml import etree
     r = etree.HTML(s)
 
@@ -250,16 +250,16 @@ def work_on_file(basepath, filename):
         if privateField in data:
             tmp = unpack(data[privateField])
             tmp = tmp.replace(';', ',')
-            print type(tmp), tmp
-            tmp = _try2utf8_encode(tmp)
-            print type(tmp), tmp
-            #tmp = tmp.encode('raw_unicode_escape')
+            #tmp = _try2utf8_encode(tmp)
             #tmp = tmp.encode('unicode_escape')
-            print type(tmp), tmp
+            #print type(tmp), type(line)
+            try:
+               tmp = tmp.decode('unicode-escape')
+            except:
+               tmp = tmp
             try:
               line += tmp
             except:
-              print type(line), type(tmp), line, tmp
               line += tmp
             if line.endswith('\\') == True:
                 line = line.rpartition('\\')[0]
@@ -279,7 +279,7 @@ def headline():
         headline += fieldname
         headline += ';'
     headline += 'filename'
-    headline += ';filesize'
+#    headline += ';filesize'
     return headline
 
 def iterate_files(basepath, out='sys.stdout'):
