@@ -11,7 +11,9 @@ import sys
 #CSVFILE = 'FlickrDataset-20k-new.txt'
 #CSVFILE = 'FlickrDataset-20k-new2.txt'
 #CSVFILE = 'FlickrDataset-3k-new.txt'
-CSVFILE = 'FlickrDataset-3k-new2.txt'
+#CSVFILE = 'FlickrDataset-3k-new2.txt'
+#CSVFILE = 'LocrDataset-5k-new.txt'
+CSVFILE = 'LocrDataset-25k-new.txt'
 outfile = CSVFILE.rstrip('.txt') + '_filtered.txt'
 #outfile = None
 

@@ -2,10 +2,13 @@
 
 """This script reads metadata from image file and Flickr API output from sqlite DB, combines it for analysis."""
 
-basepath = '/Users/henne/research_data/LocrFlickr_datasets1/locr-files/jpg+html'
-#basepath = '/Users/henne/research_data/LocrFlickr_datasets2/locr-files/jpg+html'
-CSVfile = 'LocrDataset-5k-new.txt'
-#CSVfile = 'LocrDataset-25k-new.txt'
+#basepath = '/Users/henne/research_data/LocrFlickr_datasets1/locr-files/jpg+html'
+basepath = '/Users/henne/research_data/LocrFlickr_datasets2/Locr/Locr'
+#CSVfile = 'LocrDataset-5k-new.txt'
+CSVfile = 'LocrDataset-25k-new.txt'
+
+# fix broken metadata in 25k set
+# exiv2 -M"del Exif.Image.Make" photo-deutschland-mecklenburg-west-pomerania-ralswiek-e251-55-13645782_15177e47738a17288260bbf9d277d89e_SQ.jpg
 
 import sys
 import pyexiv2
@@ -292,6 +295,7 @@ def iterate_files(basepath, out='sys.stdout'):
     before = datetime.datetime.now() - datetime.timedelta(minutes=2)
     for file in listing:
         if (file.startswith('photo-') and not file.endswith('.html')):
+            sys.stderr.write('Working on: %s\n' % file)
             line = work_on_file(basepath, file)
             if line == '':
                 continue
