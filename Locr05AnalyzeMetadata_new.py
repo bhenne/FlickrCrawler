@@ -213,10 +213,17 @@ def analyze_html(path, file):
                 taglist.append(li.getchildren()[0].text)
         extractedData['HTML.Tags'] = u', '.join(taglist)
 
+    user = r.xpath('.//div[@class="PHOTO_DETAIL_BOTTOM_LINES_LEFT_SECOND"]')
+    try:
+        u = user[0].xpath('.//a')[0].text
+    except:
+        u = ''
+    extractedData['HTML.Username'] = unicode(u)
+
     return extractedData
 
 
-HTML_keys = [ 'HTML.Tags', 'HTML.LatLong', 'HTML.Continent', 'HTML.Country', 'HTML.State', 'HTML.City', 'HTML.Postcode', 'HTML.Street' ]
+HTML_keys = [ 'HTML.Tags', 'HTML.LatLong', 'HTML.Continent', 'HTML.Country', 'HTML.State', 'HTML.City', 'HTML.Postcode', 'HTML.Street', 'HTML.Username' ]
 
 def headline():
     headline = u'#'

@@ -10,7 +10,9 @@ infospath = Flickr20CheckDataset.infospath
 count = len(Flickr20CheckDataset.photos_with_infos)
 
 none = 0
+none_o = 0
 empty = 0
+empty_o = 0
 progress = 0
 for p in Flickr20CheckDataset.photos_with_infos:
     f = codecs.open(os.path.join(infospath, '%s.txt' % p), 'rt', 'utf-8')
@@ -18,8 +20,12 @@ for p in Flickr20CheckDataset.photos_with_infos:
     exifjson = exifjson.strip('\n')
     if exifjson == '':
         none += 1
+        if p.find('_o.') > -1:
+            none_o += 1
     elif exifjson == '[]':
         empty += 1
+        if p.find('_o.') > -1:
+            empty_o += 1
     elif len(exifjson) < 100:
         print '<%s>' % exifjson
     f.close()
@@ -27,4 +33,4 @@ for p in Flickr20CheckDataset.photos_with_infos:
     if progress % round(count/50.0, 0) == 0:
         print round(100.0/count*progress, 1), '%'
 
-print "none=denied: %s (%s %%), empty: %s (%s %%)" % (none, round(100.0/count*none, 1), empty, round(100.0/count*empty, 1))
+print "none=denied: %s (%s %%) - %s, empty: %s (%s %%) - %s" % (none, round(100.0/count*none, 1), none_o, empty, round(100.0/count*empty, 1), empty_o)
