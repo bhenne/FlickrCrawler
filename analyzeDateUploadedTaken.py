@@ -95,7 +95,8 @@ for root, dirs, files in os.walk(imagepath):
                 dd3 = math.fabs((d3 - uploaded2).total_seconds() * 1.0 / 60)
             if len('%s%s%s' % (d1, d2, d3)) > 0 or d0 != datetime.datetime.max:
                 #print ' / '.join([str(x) for x in [uploaded2, datetimeoriginal, d1, d2, d3, dd0, dd1, dd2, dd3]])
-                print min(dd0, dd1, dd2, dd3)
+                #print min(dd0, dd1, dd2, dd3)
+                print ';'.join([str(x) for x in [uploaded2, datetimeoriginal, d1, d2, d3, dd0, dd1, dd2, dd3, min(dd0, dd1, dd2, dd3)]])
 #            if (lat_e == None) and o == True:
 #                metadata = pyexiv2.ImageMetadata(os.path.join(root, name))
 #                try:
