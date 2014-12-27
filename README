@@ -1,0 +1,20 @@
+A lot of scripts used to create and analyse different Flickr image datasets
+for metadata analysis of embedded and loosely attached Flickr metadata.
+
+Used for 
+
+ * Henne, B. and Szongott, C. and Smith, M: SnapMe if You Can: Privacy 
+   Threats of Other Peoples' Geo-tagged Media and What We Can Do About It. 
+   Proceedings of the sixth ACM conference on Security and privacy in 
+   wireless and mobile networks. WiSec '13, 95--106, ACM, New York, NY, 
+   USA, Year 2013.
+
+ * Henne, B: Methoden zur Schaffung von Bewusstsein über persönliche 
+   Informationen als notwendige Voraussetzung für den Schutz der Privatsphäre. 
+   PhD thesis. Technische Informationsbibliothek u. Universitätsbibliothek 
+   Hannover, Year 2014.
+
+
+(c) 2011-2014 B. Henne <henne@dcsec.uni-hannover.de>,
+              Distributed Computing & Security Group
+              Leibniz Universität Hannover, Germany
